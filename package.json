@@ -1,10 +1,10 @@
 {
-  "name": "usefetch",
+  "name": "ruse-fetch",
   "version": "1.0.0",
   "description": "React hook to use Fetch in async mode",
   "main": "src/index.js",
   "scripts": {},
-  "repository": "GlueDigital/usefetch",
+  "repository": "GlueDigital/ruse-fetch",
   "keywords": [
     "react",
     "react-hooks",
@@ -16,10 +16,6 @@
   ],
   "author": "Glue Digital <hola@glue.digital>",
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/GlueDigital/usefetch/issues"
-  },
-  "homepage": "https://github.com/GlueDigital/usefetch#readme",
   "dependencies": {
     "react-redux": "^7.2.0"
   }

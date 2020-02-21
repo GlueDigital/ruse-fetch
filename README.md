@@ -1,4 +1,4 @@
-# useFetch
+# ruse-fetch
 
 A simple React hook to use fetch with Suspense and Redux. Ideal for universal apps.
 
@@ -6,13 +6,13 @@ A simple React hook to use fetch with Suspense and Redux. Ideal for universal ap
 
 Install it with:
 
-> npm install usefetch
+> npm install ruse-fetch
 
 To make it work, you need to add our reducer to your Redux store:
 
 ```js
 import { createStore, combineReducers } from 'redux'
-import { fetchReducer } from 'usefetch'
+import { fetchReducer } from 'ruse-fetch'
 
 const reducers = {
   /* your other reducers... */
@@ -24,7 +24,7 @@ const store = createStore(combineReducers(reducers))
 Finally, to use it, just do:
 
 ```js
-import { useFetch } from 'usefetch'
+import { useFetch } from 'ruse-fetch'
 
 const MyComponent = ({ id }) => {
   const data = useFetch(`https://jsonplaceholder.typicode.com/users/${id}`)
