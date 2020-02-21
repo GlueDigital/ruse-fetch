@@ -6,6 +6,7 @@
   "scripts": {
     "prepare": "rollup --config"
   },
+  "files": ["dist"],
   "repository": "GlueDigital/ruse-fetch",
   "keywords": [
     "react",
