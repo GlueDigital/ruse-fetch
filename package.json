@@ -1,12 +1,15 @@
 {
   "name": "ruse-fetch",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "React hook to use Fetch in async mode",
-  "main": "dist/index.js",
+  "main": "dist/index.cjs.js",
+  "module": "dist/index.esm.js",
   "scripts": {
     "prepare": "rollup --config"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "repository": "GlueDigital/ruse-fetch",
   "keywords": [
     "react",
@@ -20,6 +23,7 @@
   "author": "Glue Digital <hola@glue.digital>",
   "license": "MIT",
   "peerDependencies": {
+    "react": "^16.12.0",
     "react-redux": "^7.2.0"
   },
   "devDependencies": {
