@@ -1,7 +1,7 @@
 import React from 'react'
 import { waitForElement } from '@testing-library/react'
 import { useFetch } from './index.js'
-import { render } from './test-util.js'
+import { render, createStore } from './test-util.js'
 
 describe('useFetch', () => {
   test('fetchs url, suspends, and finally returns value', async () => {
@@ -56,5 +56,20 @@ describe('useFetch', () => {
 
     // Wait for the final render, which should be an error
     await waitForElement(() => getByText('Error'))
+  })
+
+  test('cleans up cache when no longer in use', async () => {
+    const url = 'https://example.com/api/users/1'
+    const Comp = () => <h1>{useFetch(url).name}</h1>
+
+    const { getByText, store, unmount } = render(<Comp />)
+
+    // Wait for the final render
+    await waitForElement(() => getByText('Alice'))
+    expect(JSON.stringify(store.getState())).toMatch('Alice')
+
+    // Unmount the component and check again
+    unmount()
+    expect(JSON.stringify(store.getState())).not.toMatch('Alice')
   })
 })

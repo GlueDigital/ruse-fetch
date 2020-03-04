@@ -34,7 +34,7 @@ export const render = (comp) => {
     return Promise.resolve({ body: '{}', status: 404 })
   })
   const store = createStore(combineReducers({ useFetch: fetchReducer }))
-  return _render(
+  const ret = _render(
     <Provider store={store}>
       <ErrorBoundary>
         <Suspense fallback="Loading">
@@ -43,4 +43,5 @@ export const render = (comp) => {
       </ErrorBoundary>
     </Provider>
   )
+  return { ...ret, store }
 }

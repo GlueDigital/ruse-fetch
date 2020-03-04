@@ -77,8 +77,6 @@ export const fetchKeyReducer = (state, action) => {
     case FETCH_UNUSE:
       if (state.uses < 2) return null
       return { ...state, uses: state.uses - 1 }
-    default:
-      return state
   }
 }
 
