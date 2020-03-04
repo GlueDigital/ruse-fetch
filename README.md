@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/GlueDigital/ruse-fetch.svg?branch=master)](https://travis-ci.org/GlueDigital/ruse-fetch)
+
 # ruse-fetch
 
 A simple React hook to use fetch with Suspense and Redux. Ideal for universal apps.
