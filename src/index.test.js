@@ -33,8 +33,6 @@ describe('useFetch', () => {
     const CompB = () => <h1>{useFetch(urlA).name}</h1>
 
     const { getByText } = render(<><CompA /><CompB /></>)
-
-    // Wait for the final render
     await waitForElement(() => getByText('Alice Bob'))
 
     // There should be two fetch calls (with urls 1 and 2)
@@ -43,19 +41,65 @@ describe('useFetch', () => {
     expect(fetch).nthCalledWith(2, urlB, undefined)
   })
 
-  test('falls back to error boundary if fetch not ok', async () => {
+  test('cache key is used when provided', async () => {
+    const url = 'https://example.com/api/users/1'
+    const opts = { method: 'POST' }
+
+    const CompA = () => {
+      const data = useFetch(url, undefined, 'demo-key-1')
+      return <h1>{data.name}</h1>
+    }
+    const CompB = () => {
+      const data = useFetch(url, undefined, 'demo-key-1')
+      return <h1>{data.name}</h1>
+    }
+    const CompC = () => {
+      const data = useFetch(url, opts, 'demo-key-2')
+      return <h1>{data.name}</h1>
+    }
+
+    const { getAllByText } = render(<><CompA /><CompB /><CompC /></>)
+    await waitForElement(() => getAllByText('Alice'))
+
+    // There should be two fetch calls for the same url
+    expect(fetch).toHaveBeenCalledTimes(2)
+    expect(fetch).nthCalledWith(1, url, undefined)
+    expect(fetch).nthCalledWith(2, url, opts)
+  })
+
+  test('throws if fetch not ok, and specifies status and body in the error', async () => {
     jest.spyOn(console, 'error').mockImplementation(() => {}) // Don't show the error
 
-    const url = 'https://example.com/api/users/999'
-    const Comp = () => <h1>{useFetch(url).name}</h1>
+    const url = 'https://example.com/api/private'
+    const Comp = () => <h1>{useFetch(url).title}</h1>
+
+    const { getByText, error } = render(<Comp />)
+    expect(getByText('Loading')).not.toBeNull()
+    await waitForElement(() => getByText('Error 403'))
+
+    expect(error.current.status).toEqual(403)
+    expect(error.current.payload.role).toEqual('user')
+  })
+
+  test('works with non-json responses', async () => {
+    const url = 'https://example.com/text'
+    const Comp = () => <h1>{useFetch(url)}</h1>
 
     const { getByText } = render(<Comp />)
-
-    // The initial render should show the loading state
     expect(getByText('Loading')).not.toBeNull()
+    await waitForElement(() => getByText('Hello, world!'))
+  })
 
-    // Wait for the final render, which should be an error
-    await waitForElement(() => getByText('Error'))
+  test('works with non-json responses on errors', async () => {
+    const url = 'https://example.com/not-found'
+    const Comp = () => <h1>{useFetch(url)}</h1>
+
+    const { getByText, error } = render(<Comp />)
+    expect(getByText('Loading')).not.toBeNull()
+    await waitForElement(() => getByText('Error 404'))
+
+    expect(error.current.status).toEqual(404)
+    expect(error.current.payload).toEqual('Not Found')
   })
 
   test('cleans up cache when no longer in use', async () => {

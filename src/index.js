@@ -35,7 +35,7 @@ export const useFetch = (url, options, cacheKey) => {
             if (res.ok) {
               dispatch({ type: FETCH_SUCCESS, key, value })
             } else {
-              const msg = res.statusText || 'Error ' + res.status
+              const msg = 'Error ' + res.status
               const err = new Error(msg)
               err.status = res.status
               err.payload = value
@@ -56,7 +56,7 @@ export const useFetch = (url, options, cacheKey) => {
   } else if (value.isError) {
     // Error: throw with the network error
     throw value.error
-  } else if (value.isSuccess) {
+  } else {
     // Success: return the value
     return value.value
   }
