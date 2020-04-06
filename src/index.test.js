@@ -128,7 +128,7 @@ describe('useFetch', () => {
     unmount()
 
     // Now wait until fetch resolved; data should not make it to the store
-    await new Promise(resolve => setTimeout(resolve, 100))
+    await new Promise(resolve => setTimeout(resolve, 200))
     expect(JSON.stringify(store.getState())).not.toMatch('ok')
   })
 })

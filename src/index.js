@@ -6,6 +6,7 @@ const FETCH_SUCCESS = 'useFetch/success'
 const FETCH_ERROR = 'useFetch/error'
 const FETCH_USE = 'useFetch/use'
 const FETCH_UNUSE = 'useFetch/unuse'
+const FETCH_CLEANUP = 'useFetch/cleanup'
 
 export const useFetch = (url, options, cacheKey) => {
   const dispatch = useDispatch()
@@ -34,6 +35,7 @@ export const useFetch = (url, options, cacheKey) => {
           .then(value => {
             if (res.ok) {
               dispatch({ type: FETCH_SUCCESS, key, value })
+              setTimeout(() => dispatch({ type: FETCH_CLEANUP, key }), 0)
             } else {
               const msg = 'Error ' + res.status
               const err = new Error(msg)
@@ -45,6 +47,7 @@ export const useFetch = (url, options, cacheKey) => {
       })
       .catch(error => {
         dispatch({ type: FETCH_ERROR, key, error })
+        setTimeout(() => dispatch({ type: FETCH_CLEANUP, key }), 0)
         throw error
       })
 
@@ -77,6 +80,9 @@ export const fetchKeyReducer = (state, action) => {
     case FETCH_UNUSE:
       if (state.uses < 2) return null
       return { ...state, uses: state.uses - 1 }
+    case FETCH_CLEANUP:
+      if ((state.isSuccess || state.isError) && !state.uses) return null
+      return state
   }
 }
 
@@ -87,6 +93,7 @@ export const fetchReducer = (state = {}, action) => {
     case FETCH_ERROR:
     case FETCH_USE:
     case FETCH_UNUSE:
+    case FETCH_CLEANUP:
       return {
         ...state,
         [action.key]: fetchKeyReducer(state[action.key], action)
