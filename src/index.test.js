@@ -116,4 +116,19 @@ describe('useFetch', () => {
     unmount()
     expect(JSON.stringify(store.getState())).not.toMatch('Alice')
   })
+
+  test('cache does not leak when unmounted before resolving', async () => {
+    const url = 'https://example.com/api/users/1/slow'
+    const Comp = () => <h1>{useFetch(url)}</h1>
+
+    const { getByText, store, unmount } = render(<Comp />)
+
+    // Don't let the component resolve; unmount it while loading
+    await waitForElement(() => getByText('Loading'))
+    unmount()
+
+    // Now wait until fetch resolved; data should not make it to the store
+    await new Promise(resolve => setTimeout(resolve, 100))
+    expect(JSON.stringify(store.getState())).not.toMatch('ok')
+  })
 })

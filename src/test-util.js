@@ -38,6 +38,9 @@ export const render = (comp) => {
     if (req.url.endsWith('/2')) return answer({ id: 2, name: 'Bob' })
     if (req.url.endsWith('/private')) return answer({ role: 'user' }, 403)
     if (req.url.endsWith('/text')) return 'Hello, world!'
+    if (req.url.endsWith('/slow')) {
+      return new Promise(resolve => setTimeout(() => resolve({ body: 'ok'}), 100))
+    }
     return { body: 'Not Found', status: 404 }
   })
   const error = { current: null }
