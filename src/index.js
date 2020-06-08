@@ -35,7 +35,7 @@ export const useFetch = (url, options, cacheKey) => {
           .then(value => {
             if (res.ok) {
               dispatch({ type: FETCH_SUCCESS, key, value })
-              setTimeout(() => dispatch({ type: FETCH_CLEANUP, key }), 0)
+              setTimeout(() => dispatch({ type: FETCH_CLEANUP, key }), 1000)
             } else {
               const msg = 'Error ' + res.status
               const err = new Error(msg)
