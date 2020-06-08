@@ -8,23 +8,11 @@ const FETCH_USE = 'useFetch/use'
 const FETCH_UNUSE = 'useFetch/unuse'
 const FETCH_CLEANUP = 'useFetch/cleanup'
 
-export const useFetch = (url, options, cacheKey) => {
+export const useFetchCb = (url, options, cacheKey) => {
   const dispatch = useDispatch()
-
-  // Check this request status in the store
   const key = cacheKey || url
-  const value = useSelector(s => s.useFetch[key])
 
-  // Mark as used/unused on mount/unmount
-  useEffect(() => {
-    dispatch({ type: FETCH_USE, key })
-    return () => {
-      dispatch({ type: FETCH_UNUSE, key })
-    }
-  }, [key])
-
-  if (!value) {
-    // No value: start a new request
+  return () => {
     // eslint-disable-next-line no-undef
     const fetchPromise = fetch(url, options)
       .then(res => {
@@ -40,7 +28,7 @@ export const useFetch = (url, options, cacheKey) => {
           .then(value => {
             if (res.ok) {
               dispatch({ type: FETCH_SUCCESS, key, value, meta })
-              setTimeout(() => dispatch({ type: FETCH_CLEANUP, key }), 1000)
+              // setTimeout(() => dispatch({ type: FETCH_CLEANUP, key }), 1000)
             } else {
               const msg = 'Error ' + res.status
               const err = new Error(msg)
@@ -50,13 +38,44 @@ export const useFetch = (url, options, cacheKey) => {
             }
           })
       })
-      .catch(error => {
-        dispatch({ type: FETCH_ERROR, key, error })
-        setTimeout(() => dispatch({ type: FETCH_CLEANUP, key }), 0)
-        throw error
-      })
+    .catch(error => {
+      dispatch({ type: FETCH_ERROR, key, error })
+      // setTimeout(() => dispatch({ type: FETCH_CLEANUP, key }), 0)
+      throw error
+    })
 
     dispatch({ type: FETCH_LOADING, key, promise: fetchPromise })
+    return fetchPromise
+  }
+}
+
+export const useFetch = (url, options, cacheKey) => {
+  const dispatch = useDispatch()
+  const doFetch = useFetchCb(url, options, cacheKey)
+
+  // Check this request status in the store
+  const key = cacheKey || url
+  const value = useSelector(s => s.useFetch[key])
+
+  // Mark as used/unused on mount/unmount
+  useEffect(() => {
+    dispatch({ type: FETCH_USE, key })
+    return () => {
+      dispatch({ type: FETCH_UNUSE, key })
+    }
+  }, [key])
+
+  if (!value) {
+    // No value: start a new request
+    const fetchPromise = doFetch()
+      .then(v => {
+        setTimeout(() => dispatch({ type: FETCH_CLEANUP, key }), 1000)
+        return v
+      })
+      .catch(e => {
+        setTimeout(() => dispatch({ type: FETCH_CLEANUP, key }), 1000)
+        throw e
+      })
     throw fetchPromise
   } else if (value.isLoading) {
     // Still loading: wait on the original fetch promise
