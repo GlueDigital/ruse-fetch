@@ -30,11 +30,16 @@ export const useFetch = (url, options, cacheKey) => {
       .then(res => {
         const resType = res.headers.get('Content-Type')
         const isJson = resType.startsWith('application/json')
+        const meta = {
+          status: res.status,
+          headers: Object.fromEntries(res.headers.entries()),
+          ts: Date.now()
+        }
         const valuePromise = isJson ? res.json() : res.text()
         return valuePromise
           .then(value => {
             if (res.ok) {
-              dispatch({ type: FETCH_SUCCESS, key, value })
+              dispatch({ type: FETCH_SUCCESS, key, value, meta })
               setTimeout(() => dispatch({ type: FETCH_CLEANUP, key }), 1000)
             } else {
               const msg = 'Error ' + res.status
@@ -65,6 +70,12 @@ export const useFetch = (url, options, cacheKey) => {
   }
 }
 
+export const useFetchMeta = (url, cacheKey) => {
+  // Check this request status in the store
+  const key = cacheKey || url
+  const value = useSelector(s => s.useFetch[key])
+  return value && value.meta
+}
 
 export const fetchKeyReducer = (state, action) => {
   state = state || {}
@@ -72,7 +83,7 @@ export const fetchKeyReducer = (state, action) => {
     case FETCH_LOADING:
       return { isLoading: true, promise: action.promise, uses: state.uses }
     case FETCH_SUCCESS:
-      return { isSuccess: true, value: action.value, uses: state.uses }
+      return { isSuccess: true, value: action.value, uses: state.uses, meta: action.meta }
     case FETCH_ERROR:
       return { isError: true, error: action.error, uses: state.uses }
     case FETCH_USE:
