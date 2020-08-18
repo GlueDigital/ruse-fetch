@@ -91,3 +91,7 @@ const { status, headers } = useFetchMeta(url)
 ```
 
 You can pass a cache key as the second parameter when needed. Note that it doesn't receive the options, as it will never initiate a fetch, and they are not needed to identify a specific call: only the url and cache key are needed.
+
+## Tips & tricks
+
+Sometimes you need to fetch conditionally during render, but hooks can't be called conditionally. No problem: just set the URL to null, and useFetch will be a no-op.

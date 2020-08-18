@@ -59,13 +59,16 @@ export const useFetch = (url, options, cacheKey) => {
 
   // Mark as used/unused on mount/unmount
   useEffect(() => {
+    if (!url) return
     dispatch({ type: FETCH_USE, key })
     return () => {
       dispatch({ type: FETCH_UNUSE, key })
     }
-  }, [key])
+  }, [key, url])
 
-  if (!value) {
+  if (!url) {
+    return null
+  } else if (!value) {
     // No value: start a new request
     const fetchPromise = doFetch()
       .then(v => {

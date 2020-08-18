@@ -67,6 +67,17 @@ describe('useFetch', () => {
     expect(fetch).nthCalledWith(2, url, opts)
   })
 
+  test('does nothing if url is falsy', async () => {
+    const Comp = () => <h1>{useFetch(null) || 'OK'}</h1>
+    const { getByText } = render(<Comp />)
+
+    // Fetch must not be called
+    expect(fetch).toHaveBeenCalledTimes(0)
+    
+    // The initial render should NOT be loading, but OK
+    expect(getByText('OK')).not.toBeNull()
+  })
+
   test('throws if fetch not ok, and specifies status and body in the error', async () => {
     jest.spyOn(console, 'error').mockImplementation(() => {}) // Don't show the error
 
