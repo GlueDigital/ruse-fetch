@@ -17,7 +17,7 @@ export const useFetchCb = (url, options, cacheKey) => {
     const fetchPromise = fetch(url, options)
       .then(res => {
         const resType = res.headers.get('Content-Type')
-        const isJson = resType.startsWith('application/json')
+        const isJson = resType && resType.startsWith('application/json')
         const meta = {
           status: res.status,
           headers: Object.fromEntries(res.headers.entries()),
