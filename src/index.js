@@ -99,8 +99,8 @@ export const useFetchMeta = (url, cacheKey) => {
   return value && value.meta
 }
 
-export const fetchKeyReducer = (state, action) => {
-  state = state || {}
+export const fetchKeyReducer = (unsafeState, action) => {
+  const state = unsafeState || {}
   switch (action.type) {
     case FETCH_LOADING:
       return { isLoading: true, promise: action.promise, uses: state.uses }
@@ -115,7 +115,7 @@ export const fetchKeyReducer = (state, action) => {
       return { ...state, uses: state.uses - 1 }
     case FETCH_CLEANUP:
       if ((state.isSuccess || state.isError) && !state.uses) return null
-      return state
+      return unsafeState
   }
 }
 
