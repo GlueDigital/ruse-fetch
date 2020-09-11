@@ -29,6 +29,7 @@ export const useFetchCb = (url, options, cacheKey) => {
             if (res.ok) {
               dispatch({ type: FETCH_SUCCESS, key, value, meta })
               // setTimeout(() => dispatch({ type: FETCH_CLEANUP, key }), 1000)
+              return value
             } else {
               const msg = 'Error ' + res.status
               const err = new Error(msg)
