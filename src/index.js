@@ -69,28 +69,32 @@ export const useFetch = (url, options, cacheKey) => {
 
   if (!url) {
     return null
-  } else if (!value) {
-    // No value: start a new request
-    const fetchPromise = doFetch()
-      .then(v => {
-        setTimeout(() => dispatch({ type: FETCH_CLEANUP, key }), 1000)
-        return v
-      })
-      .catch(e => {
-        setTimeout(() => dispatch({ type: FETCH_CLEANUP, key }), 1000)
-        throw e
-      })
-    throw fetchPromise
-  } else if (value.isLoading) {
-    // Still loading: wait on the original fetch promise
-    throw value.promise
-  } else if (value.isError) {
-    // Error: throw with the network error
-    throw value.error
-  } else {
-    // Success: return the value
-    return value.value
   }
+
+  if (value) {
+    if (value.isLoading) {
+      // Still loading: wait on the original fetch promise
+      throw value.promise
+    } else if (value.isError) {
+      // Error: throw with the network error
+      throw value.error
+    } else if (value.isSuccess) {
+      // Success: return the value
+      return value.value
+    }
+  }
+
+  // No value: start a new request
+  const fetchPromise = doFetch()
+    .then(v => {
+      setTimeout(() => dispatch({ type: FETCH_CLEANUP, key }), 1000)
+      return v
+    })
+    .catch(e => {
+      setTimeout(() => dispatch({ type: FETCH_CLEANUP, key }), 1000)
+      throw e
+    })
+  throw fetchPromise
 }
 
 export const useFetchMeta = (url, cacheKey) => {
