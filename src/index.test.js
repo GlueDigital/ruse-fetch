@@ -12,7 +12,7 @@ describe('useFetch', () => {
       return <h1>{user.name}</h1>
     }
 
-    const { getByText } = render(<DemoComponent />)
+    const { getByText, findByText } = render(<DemoComponent />)
 
     // The fetch call must have been performed right away
     expect(fetch).toHaveBeenCalledTimes(1)
@@ -22,7 +22,7 @@ describe('useFetch', () => {
     expect(getByText('Loading')).not.toBeNull()
 
     // Wait for the final render
-    await waitForElement(() => getByText('Alice'))
+    await findByText('Alice')
   })
 
   test('multiple useFetch for same URL combine into a single request', async () => {
@@ -32,8 +32,8 @@ describe('useFetch', () => {
     const CompA = () => <h1>{useFetch(urlA).name} {useFetch(urlB).name}</h1>
     const CompB = () => <h1>{useFetch(urlA).name}</h1>
 
-    const { getByText } = render(<><CompA /><CompB /></>)
-    await waitForElement(() => getByText('Alice Bob'))
+    const { findByText } = render(<><CompA /><CompB /></>)
+    await findByText('Alice Bob')
 
     // There should be two fetch calls (with urls 1 and 2)
     expect(fetch).toHaveBeenCalledTimes(2)
@@ -58,8 +58,8 @@ describe('useFetch', () => {
       return <h1>{data.name}</h1>
     }
 
-    const { getAllByText } = render(<><CompA /><CompB /><CompC /></>)
-    await waitForElement(() => getAllByText('Alice'))
+    const { findAllByText } = render(<><CompA /><CompB /><CompC /></>)
+    await findAllByText('Alice')
 
     // There should be two fetch calls for the same url
     expect(fetch).toHaveBeenCalledTimes(2)
@@ -84,9 +84,9 @@ describe('useFetch', () => {
     const url = 'https://example.com/api/private'
     const Comp = () => <h1>{useFetch(url).title}</h1>
 
-    const { getByText, error } = render(<Comp />)
+    const { getByText, findByText, error } = render(<Comp />)
     expect(getByText('Loading')).not.toBeNull()
-    await waitForElement(() => getByText('Error 403'))
+    await findByText('Error 403')
 
     expect(error.current.status).toEqual(403)
     expect(error.current.payload.role).toEqual('user')
@@ -96,18 +96,18 @@ describe('useFetch', () => {
     const url = 'https://example.com/text'
     const Comp = () => <h1>{useFetch(url)}</h1>
 
-    const { getByText } = render(<Comp />)
+    const { getByText, findByText } = render(<Comp />)
     expect(getByText('Loading')).not.toBeNull()
-    await waitForElement(() => getByText('Hello, world!'))
+    await findByText('Hello, world!')
   })
 
   test('works with non-json responses on errors', async () => {
     const url = 'https://example.com/not-found'
     const Comp = () => <h1>{useFetch(url)}</h1>
 
-    const { getByText, error } = render(<Comp />)
+    const { getByText, findByText, error } = render(<Comp />)
     expect(getByText('Loading')).not.toBeNull()
-    await waitForElement(() => getByText('Error 404'))
+    await findByText('Error 404')
 
     expect(error.current.status).toEqual(404)
     expect(error.current.payload).toEqual('Not Found')
@@ -117,10 +117,10 @@ describe('useFetch', () => {
     const url = 'https://example.com/api/users/1'
     const Comp = () => <h1>{useFetch(url).name}</h1>
 
-    const { getByText, store, unmount } = render(<Comp />)
+    const { findByText, store, unmount } = render(<Comp />)
 
     // Wait for the final render
-    await waitForElement(() => getByText('Alice'))
+    await findByText('Alice')
     expect(JSON.stringify(store.getState())).toMatch('Alice')
 
     // Unmount the component and check again
@@ -132,10 +132,10 @@ describe('useFetch', () => {
     const url = 'https://example.com/api/users/1/slow'
     const Comp = () => <h1>{useFetch(url)}</h1>
 
-    const { getByText, store, unmount } = render(<Comp />)
+    const { findByText, store, unmount } = render(<Comp />)
 
     // Don't let the component resolve; unmount it while loading
-    await waitForElement(() => getByText('Loading'))
+    await findByText('Loading')
     unmount()
 
     // Now wait until fetch resolved; data should not make it to the store
