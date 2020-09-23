@@ -4,12 +4,14 @@
   "description": "React hook to use Fetch in async mode",
   "main": "dist/index.cjs.js",
   "module": "dist/index.esm.js",
+  "types": "types/index.d.ts",
   "scripts": {
     "prepare": "rollup --config",
     "test": "jest"
   },
   "files": [
-    "dist"
+    "dist",
+    "types"
   ],
   "repository": "GlueDigital/ruse-fetch",
   "keywords": [
