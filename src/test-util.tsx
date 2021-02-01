@@ -2,11 +2,16 @@ import React, { Suspense } from 'react'
 import { Provider } from 'react-redux'
 import { createStore, combineReducers } from 'redux'
 import { render as _render } from '@testing-library/react'
-import { fetchReducer } from './index.js'
+import { fetchReducer } from './index'
 require('jest-fetch-mock').enableMocks()
+
+declare var fetch: any // Contains extra mocks
 
 // Demo error boundary
 class ErrorBoundary extends React.Component {
+  state: any
+  props: any
+
   constructor (props) {
     super(props)
     this.state = { error: false }
@@ -27,7 +32,7 @@ class ErrorBoundary extends React.Component {
 
 // Helper to render with mocked fetch, a store, and a suspense wrapper
 export const render = (comp) => {
-  const answer = (data, status) => Promise.resolve({
+  const answer = (data, status?: number) => Promise.resolve({
     body: JSON.stringify(data),
     headers: { 'Content-Type': 'application/json' },
     status: status || 200
@@ -55,4 +60,9 @@ export const render = (comp) => {
     </Provider>
   )
   return { ...ret, store, error }
+}
+
+export interface User {
+  id: number,
+  name: string
 }

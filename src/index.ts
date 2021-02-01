@@ -8,7 +8,9 @@ const FETCH_USE = 'useFetch/use'
 const FETCH_UNUSE = 'useFetch/unuse'
 const FETCH_CLEANUP = 'useFetch/cleanup'
 
-export const useFetchCb = (url, options, cacheKey) => {
+export type FetchCallback<T> = () => Promise<T>
+
+export const useFetchCb = <T> (url: string, options?: RequestInit, cacheKey?: string): FetchCallback<T> => {
   const dispatch = useDispatch()
   const key = cacheKey || url
 
@@ -32,7 +34,7 @@ export const useFetchCb = (url, options, cacheKey) => {
               return value
             } else {
               const msg = 'Error ' + res.status
-              const err = new Error(msg)
+              const err: any = new Error(msg)
               err.status = res.status
               err.payload = value
               throw err
@@ -50,7 +52,7 @@ export const useFetchCb = (url, options, cacheKey) => {
   }
 }
 
-export const useFetch = (url, options, cacheKey) => {
+export const useFetch = <T> (url: string, options?: RequestInit, cacheKey?: string): T => {
   const dispatch = useDispatch()
   const doFetch = useFetchCb(url, options, cacheKey)
 
@@ -97,7 +99,13 @@ export const useFetch = (url, options, cacheKey) => {
   throw fetchPromise
 }
 
-export const useFetchMeta = (url, cacheKey) => {
+export interface FetchMeta {
+  status: number
+  headers: object
+  ts: number
+}
+
+export const useFetchMeta = (url: string, cacheKey?: string): FetchMeta => {
   // Check this request status in the store
   const key = cacheKey || url
   const value = useSelector(s => s.useFetch[key])

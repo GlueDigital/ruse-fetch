@@ -1,14 +1,13 @@
 import React from 'react'
-import { waitForElement } from '@testing-library/react'
-import { useFetch } from './index.js'
-import { render, createStore } from './test-util.js'
+import { useFetch } from './index'
+import { render, User } from './test-util'
 
 describe('useFetch', () => {
   test('fetchs url, suspends, and finally returns value', async () => {
     const url = 'https://example.com/api/users/1'
 
     const DemoComponent = () => {
-      const user = useFetch(url)
+      const user: User = useFetch<User>(url)
       return <h1>{user.name}</h1>
     }
 
@@ -29,8 +28,8 @@ describe('useFetch', () => {
     const urlA = 'https://example.com/api/users/1'
     const urlB = 'https://example.com/api/users/2'
 
-    const CompA = () => <h1>{useFetch(urlA).name} {useFetch(urlB).name}</h1>
-    const CompB = () => <h1>{useFetch(urlA).name}</h1>
+    const CompA = () => <h1>{useFetch<User>(urlA).name} {useFetch<User>(urlB).name}</h1>
+    const CompB = () => <h1>{useFetch<User>(urlA).name}</h1>
 
     const { findByText } = render(<><CompA /><CompB /></>)
     await findByText('Alice Bob')
@@ -46,15 +45,15 @@ describe('useFetch', () => {
     const opts = { method: 'POST' }
 
     const CompA = () => {
-      const data = useFetch(url, undefined, 'demo-key-1')
+      const data: User = useFetch<User>(url, undefined, 'demo-key-1')
       return <h1>{data.name}</h1>
     }
     const CompB = () => {
-      const data = useFetch(url, undefined, 'demo-key-1')
+      const data: User = useFetch<User>(url, undefined, 'demo-key-1')
       return <h1>{data.name}</h1>
     }
     const CompC = () => {
-      const data = useFetch(url, opts, 'demo-key-2')
+      const data: User = useFetch<User>(url, opts, 'demo-key-2')
       return <h1>{data.name}</h1>
     }
 
@@ -82,7 +81,7 @@ describe('useFetch', () => {
     jest.spyOn(console, 'error').mockImplementation(() => {}) // Don't show the error
 
     const url = 'https://example.com/api/private'
-    const Comp = () => <h1>{useFetch(url).title}</h1>
+    const Comp = () => <h1>{useFetch<any>(url).title}</h1>
 
     const { getByText, findByText, error } = render(<Comp />)
     expect(getByText('Loading')).not.toBeNull()
@@ -115,7 +114,7 @@ describe('useFetch', () => {
 
   test('cleans up cache when no longer in use', async () => {
     const url = 'https://example.com/api/users/1'
-    const Comp = () => <h1>{useFetch(url).name}</h1>
+    const Comp = () => <h1>{useFetch<User>(url).name}</h1>
 
     const { findByText, store, unmount } = render(<Comp />)
 
