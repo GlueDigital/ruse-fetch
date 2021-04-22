@@ -18,7 +18,7 @@ export const useFetchCb = <T> (url?: string, options?: RequestInit, cacheKey?: s
     options = cbOptions || options
     cbCacheKey = cbCacheKey || cacheKey
 
-    const key = cacheKey || url
+    const key = cbCacheKey || url
 
     // eslint-disable-next-line no-undef
     const fetchPromise = fetch(url, options)
