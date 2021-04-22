@@ -10,11 +10,16 @@ const FETCH_CLEANUP = 'useFetch/cleanup'
 
 export type FetchCallback<T> = () => Promise<T>
 
-export const useFetchCb = <T> (url: string, options?: RequestInit, cacheKey?: string): FetchCallback<T> => {
+export const useFetchCb = <T> (url?: string, options?: RequestInit, cacheKey?: string): FetchCallback<T> => {
   const dispatch = useDispatch()
-  const key = cacheKey || url
 
-  return () => {
+  return (cbUrl?: string, cbOptions?: RequestInit, cbCacheKey?: string) => {
+    url = cbUrl || url
+    options = cbOptions || options
+    cbCacheKey = cbCacheKey || cacheKey
+
+    const key = cacheKey || url
+
     // eslint-disable-next-line no-undef
     const fetchPromise = fetch(url, options)
       .then(res => {
