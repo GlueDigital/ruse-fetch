@@ -72,7 +72,7 @@ describe('useFetch', () => {
 
     // Fetch must not be called
     expect(fetch).toHaveBeenCalledTimes(0)
-    
+
     // The initial render should NOT be loading, but OK
     expect(getByText('OK')).not.toBeNull()
   })

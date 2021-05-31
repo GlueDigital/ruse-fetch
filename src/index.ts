@@ -8,6 +8,8 @@ const FETCH_USE = 'useFetch/use'
 const FETCH_UNUSE = 'useFetch/unuse'
 const FETCH_CLEANUP = 'useFetch/cleanup'
 
+let cleanupTimer = null
+
 export type FetchCallback<T> = () => Promise<T>
 
 export const useFetchCb = <T> (url?: string, options?: RequestInit, cacheKey?: string): FetchCallback<T> => {
@@ -35,7 +37,6 @@ export const useFetchCb = <T> (url?: string, options?: RequestInit, cacheKey?: s
           .then(value => {
             if (res.ok) {
               dispatch({ type: FETCH_SUCCESS, key, value, meta })
-              // setTimeout(() => dispatch({ type: FETCH_CLEANUP, key }), 1000)
               return value
             } else {
               const msg = 'Error ' + res.status
@@ -48,7 +49,6 @@ export const useFetchCb = <T> (url?: string, options?: RequestInit, cacheKey?: s
       })
     .catch(error => {
       dispatch({ type: FETCH_ERROR, key, error })
-      // setTimeout(() => dispatch({ type: FETCH_CLEANUP, key }), 0)
       throw error
     })
 
@@ -92,13 +92,14 @@ export const useFetch = <T> (url: string, options?: RequestInit, cacheKey?: stri
   }
 
   // No value: start a new request
+  if (cleanupTimer) clearTimeout(cleanupTimer)
   const fetchPromise = doFetch()
     .then(v => {
-      setTimeout(() => dispatch({ type: FETCH_CLEANUP, key }), 1000)
+      cleanupTimer = setTimeout(() => dispatch({ type: FETCH_CLEANUP }), 1000)
       return v
     })
     .catch(e => {
-      setTimeout(() => dispatch({ type: FETCH_CLEANUP, key }), 1000)
+      cleanupTimer = setTimeout(() => dispatch({ type: FETCH_CLEANUP }), 1000)
       throw e
     })
   throw fetchPromise
@@ -131,9 +132,6 @@ export const fetchKeyReducer = (unsafeState, action) => {
     case FETCH_UNUSE:
       if (state.uses < 2) return null
       return { ...state, uses: state.uses - 1 }
-    case FETCH_CLEANUP:
-      if ((state.isSuccess || state.isError) && !state.uses) return null
-      return unsafeState
   }
 }
 
@@ -144,11 +142,19 @@ export const fetchReducer = (state = {}, action) => {
     case FETCH_ERROR:
     case FETCH_USE:
     case FETCH_UNUSE:
-    case FETCH_CLEANUP:
       return {
         ...state,
         [action.key]: fetchKeyReducer(state[action.key], action)
       }
+    case FETCH_CLEANUP:
+      const ret = {}
+      for (const key in state) {
+        const v = state[key]
+        if (v && ((!v.isSuccess && !v.isError) || v.uses)) {
+          ret[key] = v
+        }
+      }
+      return ret
     default:
       return state
   }
