@@ -16,7 +16,7 @@ describe('useFetch', () => {
     // The fetch call must have been performed right away
     expect(fetch).toHaveBeenCalledTimes(1)
     expect(fetch).toBeCalledWith(url, undefined)
-    
+
     // The initial render should show the loading state
     expect(getByText('Loading')).not.toBeNull()
 
@@ -137,8 +137,18 @@ describe('useFetch', () => {
     await findByText('Loading')
     unmount()
 
-    // Now wait until fetch resolved; data should not make it to the store
+    // Now wait until fetch resolved; data should be removed from the store
     await new Promise(resolve => setTimeout(resolve, 1200))
     expect(JSON.stringify(store.getState())).not.toMatch('ok')
+  })
+
+  test('cache clean does not interfere with multiple slow fetchs from same component', async () => {
+    const urlA = 'https://example.com/api/users/1/slower'
+    const urlB = 'https://example.com/api/users/2/slower'
+    const Comp = () => <h1>{useFetch(urlA)}{useFetch(urlB)}</h1>
+
+    const { findByText, store } = render(<Comp />)
+    await findByText('okok', {}, { timeout: 3500 })
+    expect(fetch).toHaveBeenCalledTimes(2)
   })
 })

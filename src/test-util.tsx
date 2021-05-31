@@ -46,6 +46,9 @@ export const render = (comp) => {
     if (req.url.endsWith('/slow')) {
       return new Promise(resolve => setTimeout(() => resolve({ body: 'ok'}), 100))
     }
+    if (req.url.endsWith('/slower')) {
+      return new Promise(resolve => setTimeout(() => resolve({ body: 'ok'}), 1500))
+    }
     return { body: 'Not Found', status: 404 }
   })
   const error = { current: null }
