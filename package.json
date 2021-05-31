@@ -1,6 +1,6 @@
 {
   "name": "ruse-fetch",
-  "version": "2.1.0",
+  "version": "2.1.2",
   "description": "React hook to use Fetch in async mode",
   "main": "dist/index.cjs.js",
   "module": "dist/index.esm.js",
