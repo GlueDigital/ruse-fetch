@@ -63,7 +63,7 @@ export const useFetch = <T> (url: string, options?: RequestInit, cacheKey?: stri
 
   // Check this request status in the store
   const key = cacheKey || url
-  const value = useSelector(s => s.useFetch[key])
+  const value = useSelector<any, any>(s => s.useFetch[key])
 
   // Mark as used/unused on mount/unmount
   useEffect(() => {
@@ -114,7 +114,7 @@ export interface FetchMeta {
 export const useFetchMeta = (url: string, cacheKey?: string): FetchMeta => {
   // Check this request status in the store
   const key = cacheKey || url
-  const value = useSelector(s => s.useFetch[key])
+  const value = useSelector<any, any>(s => s.useFetch[key])
   return value && value.meta
 }
 

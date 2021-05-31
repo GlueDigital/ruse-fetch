@@ -1,3 +1,7 @@
+/**
+ * @jest-environment jsdom
+ */
+
 import React from 'react'
 import { useFetch } from './index'
 import { render, User } from './test-util'
