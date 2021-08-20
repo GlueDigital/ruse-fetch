@@ -8,7 +8,7 @@ require('jest-fetch-mock').enableMocks()
 declare var fetch: any // Contains extra mocks
 
 // Demo error boundary
-class ErrorBoundary extends React.Component {
+export class ErrorBoundary extends React.Component {
   state: any
   props: any
 
@@ -23,7 +23,7 @@ class ErrorBoundary extends React.Component {
 
   render () {
     if (this.state.error) {
-      this.props.onError(this.state.error) // Might be called multiple times
+      this.props.onError && this.props.onError(this.state.error) // Might be called multiple times
       return this.state.error.message
     }
     return this.props.children

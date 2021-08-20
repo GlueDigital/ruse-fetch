@@ -2,9 +2,9 @@
  * @jest-environment jsdom
  */
 
-import React from 'react'
-import { useFetch } from './index'
-import { render, User } from './test-util'
+import React, { useState } from 'react'
+import { useFetch, useFetchMeta } from './index'
+import { render, User, ErrorBoundary } from './test-util'
 
 describe('useFetch', () => {
   test('fetchs url, suspends, and finally returns value', async () => {
@@ -146,6 +146,39 @@ describe('useFetch', () => {
     expect(JSON.stringify(store.getState())).not.toMatch('ok')
   })
 
+  test('cache cleanup does not affect items still in use', async () => {
+    const urlA = 'https://example.com/api/users/1'
+    const urlB = 'https://example.com/api/users/2'
+    const CompA = () => <h1>{useFetch<User>(urlA).name}</h1>
+    const CompB = () => {
+      const user = useFetch<User>(urlB)
+      throw new Error("crash")
+    }
+    const Comp = () => (
+      <>
+        <CompA />
+        <ErrorBoundary>
+          <CompB />
+        </ErrorBoundary>
+      </>
+    )
+
+    const { findByText, getByText, store } = render(<Comp />)
+
+    // Wait for CompA to be ready
+    await findByText('Alice')
+    let state = JSON.stringify(store.getState())
+    expect(state).toMatch('Alice')
+    expect(state).toMatch('Bob')
+
+    // CompB crashed; wait for cleanup
+    await new Promise(resolve => setTimeout(resolve, 1200))
+    state = JSON.stringify(store.getState())
+    expect(getByText('crash')).not.toBeNull()
+    expect(state).toMatch('Alice')
+    expect(state).not.toMatch('Bob')
+  })
+
   test('cache clean does not interfere with multiple slow fetchs from same component', async () => {
     const urlA = 'https://example.com/api/users/1/slower'
     const urlB = 'https://example.com/api/users/2/slower'
@@ -154,5 +187,35 @@ describe('useFetch', () => {
     const { findByText, store } = render(<Comp />)
     await findByText('okok', {}, { timeout: 3500 })
     expect(fetch).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('useFetchMeta', () => {
+  test('returns request info about the corresponding fetch', async () => {
+    const url = 'https://example.com/api/users/1'
+
+    const DemoComponent = () => {
+      const user: User = useFetch<User>(url)
+      const meta = useFetchMeta(url)
+      return (
+        <>
+          <div>{meta.status}</div>
+          <div>{meta.headers['content-type']}</div>
+        </>
+      )
+    }
+
+    const { getByText, findByText } = render(<DemoComponent />)
+
+    // The fetch call must have been performed right away
+    expect(fetch).toHaveBeenCalledTimes(1)
+    expect(fetch).toBeCalledWith(url, undefined)
+
+    // The initial render should show the loading state
+    expect(getByText('Loading')).not.toBeNull()
+
+    // Wait for the final render
+    await findByText('200')
+    expect(getByText('application/json')).not.toBeNull()
   })
 })
