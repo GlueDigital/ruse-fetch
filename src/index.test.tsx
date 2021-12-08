@@ -188,6 +188,41 @@ describe('useFetch', () => {
     await findByText('okok', {}, { timeout: 3500 })
     expect(fetch).toHaveBeenCalledTimes(2)
   })
+
+  test('if keep is enabled, it does not get removed on unmount but gets updated when used again', async () => {
+    const url = 'https://example.com/api/users/1'
+    const Comp = () => <h1>{useFetch<User>(url, undefined, { keep: true }).name}</h1>
+    const Toggler = () => {
+      const [show, setShow] = useState(true)
+      return <>
+        <button onClick={() => setShow(x => !x)}>Toggle</button>
+        {show ? <Comp /> : 'Off'}
+      </>
+    }
+
+
+    const { findByText, getByText, store } = render(<Toggler />)
+    expect(fetch).toHaveBeenCalledTimes(1)
+
+    // Wait for the final render
+    await findByText('Alice')
+    expect(JSON.stringify(store.getState())).toMatch('Alice')
+
+    // Unmount the component and check store contents
+    getByText('Toggle').click()
+    await findByText('Off')
+    expect(JSON.stringify(store.getState())).toMatch('Alice')
+    expect(JSON.stringify(store.getState())).toMatch('stale')
+
+    // Render it again
+    getByText('Toggle').click()
+
+    // The initial render should show the previous value
+    expect(getByText('Alice')).not.toBeNull()
+
+    // A new fetch call must have been performed right away
+    expect(fetch).toHaveBeenCalledTimes(2)
+  })
 })
 
 describe('useFetchMeta', () => {

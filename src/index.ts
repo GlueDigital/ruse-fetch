@@ -12,17 +12,22 @@ let cleanupTimer = null
 
 export type FetchCallback<T> = () => Promise<T>
 
-export const useFetchCb = <T> (url?: string, options?: RequestInit, cacheKey?: string): FetchCallback<T> => {
+export interface CacheOptions {
+  key?: string
+  keep?: boolean
+}
+
+export const useFetchCb = <T> (url?: string, options?: RequestInit, cacheKeyOrOpts?: CacheOptions | string): FetchCallback<T> => {
   const dispatch = useDispatch()
 
-  return (cbUrl?: string, cbOptions?: RequestInit, cbCacheKey?: string) => {
+  return (cbUrl?: string, cbOptions?: RequestInit, cbCacheKeyOrOpts?: CacheOptions | string) => {
     url = cbUrl || url
     options = cbOptions || options
-    cbCacheKey = cbCacheKey || cacheKey
+    cacheKeyOrOpts = cbCacheKeyOrOpts || cacheKeyOrOpts
+    const cacheOpts: CacheOptions = typeof cacheKeyOrOpts === 'string' ? { key: cacheKeyOrOpts } : cacheKeyOrOpts || {}
 
-    const key = cbCacheKey || url
+    const key = cacheOpts.key || url
 
-    // eslint-disable-next-line no-undef
     const fetchPromise = fetch(url, options)
       .then(res => {
         const resType = res.headers.get('Content-Type')
@@ -36,7 +41,7 @@ export const useFetchCb = <T> (url?: string, options?: RequestInit, cacheKey?: s
         return valuePromise
           .then(value => {
             if (res.ok) {
-              dispatch({ type: FETCH_SUCCESS, key, value, meta })
+              dispatch({ type: FETCH_SUCCESS, key, value, meta, keep: cacheOpts.keep })
               return value
             } else {
               const msg = 'Error ' + res.status
@@ -57,12 +62,13 @@ export const useFetchCb = <T> (url?: string, options?: RequestInit, cacheKey?: s
   }
 }
 
-export const useFetch = <T> (url: string, options?: RequestInit, cacheKey?: string): T => {
+export const useFetch = <T> (url: string, options?: RequestInit, cacheKeyOrOpts?: CacheOptions | string): T => {
   const dispatch = useDispatch()
-  const doFetch = useFetchCb(url, options, cacheKey)
+  const cacheOpts: CacheOptions = typeof cacheKeyOrOpts === 'string' ? { key: cacheKeyOrOpts } : cacheKeyOrOpts || {}
+  const doFetch = useFetchCb(url, options, cacheOpts)
 
   // Check this request status in the store
-  const key = cacheKey || url
+  const key = cacheOpts.key || url
   const value = useSelector<any, any>(s => s.useFetch[key])
 
   // Mark as used/unused on mount/unmount
@@ -79,19 +85,18 @@ export const useFetch = <T> (url: string, options?: RequestInit, cacheKey?: stri
   }
 
   if (value) {
-    if (value.isLoading) {
-      // Still loading: wait on the original fetch promise
-      throw value.promise
+    if (value.isSuccess) {
+      if (!value.stale || value.isLoading) {
+        return value.value
+      }
     } else if (value.isError) {
-      // Error: throw with the network error
       throw value.error
-    } else if (value.isSuccess) {
-      // Success: return the value
-      return value.value
+    } else if (value.isLoading) {
+      throw value.promise
     }
   }
 
-  // No value: start a new request
+  // No value (or stale): start a new request
   if (cleanupTimer) clearTimeout(cleanupTimer)
   const fetchPromise = doFetch()
     .then(v => {
@@ -102,6 +107,11 @@ export const useFetch = <T> (url: string, options?: RequestInit, cacheKey?: stri
       cleanupTimer = setTimeout(() => dispatch({ type: FETCH_CLEANUP }), 1000)
       throw e
     })
+
+  // If we have a (stale) value, use it now, even though we started a new request
+  if (value?.isSuccess) return value.value
+
+  // Otherwise, throw the promise
   throw fetchPromise
 }
 
@@ -122,16 +132,16 @@ export const fetchKeyReducer = (unsafeState, action) => {
   const state = unsafeState || {}
   switch (action.type) {
     case FETCH_LOADING:
-      return { isLoading: true, promise: action.promise, uses: state.uses }
+      return { ...state, isLoading: true, promise: action.promise }
     case FETCH_SUCCESS:
-      return { isSuccess: true, value: action.value, uses: state.uses, meta: action.meta }
+      return { isSuccess: true, value: action.value, uses: state.uses, meta: action.meta, keep: action.keep }
     case FETCH_ERROR:
       return { isError: true, error: action.error, uses: state.uses }
     case FETCH_USE:
       return { ...state, uses: (state.uses || 0) + 1 }
     case FETCH_UNUSE:
-      if (state.uses < 2) return null
-      return { ...state, uses: state.uses - 1 }
+      if (state.uses < 2 && !state.keep) return null
+      return { ...state, uses: state.uses - 1, stale: state.uses < 2 }
   }
 }
 
@@ -150,7 +160,7 @@ export const fetchReducer = (state = {}, action) => {
       const ret = {}
       for (const key in state) {
         const v = state[key]
-        if (v && ((!v.isSuccess && !v.isError) || v.uses)) {
+        if (v && ((!v.isSuccess && !v.isError) || v.uses || v.keep)) {
           ret[key] = v
         }
       }
