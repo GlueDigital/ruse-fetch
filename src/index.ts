@@ -10,7 +10,7 @@ const FETCH_CLEANUP = 'useFetch/cleanup'
 
 let cleanupTimer = null
 
-export type FetchCallback<T> = () => Promise<T>
+export type FetchCallback<T> = (url?: string, options?: RequestInit, cacheKeyOrOpts?: CacheOptions | string) => Promise<T>
 
 export interface CacheOptions {
   key?: string
