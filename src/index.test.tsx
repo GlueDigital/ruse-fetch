@@ -3,7 +3,7 @@
  */
 
 import React, { useState } from 'react'
-import { useFetch, useFetchMeta } from './index'
+import { useFetch, useFetchCb, useFetchMeta } from './index'
 import { render, User, ErrorBoundary } from './test-util'
 
 describe('useFetch', () => {
@@ -252,5 +252,32 @@ describe('useFetchMeta', () => {
     // Wait for the final render
     await findByText('200')
     expect(getByText('application/json')).not.toBeNull()
+  })
+
+  describe('useFetchCb', () => {
+    test('takes parameters either from cb call, or hook call, in that order', async () => {
+      const urlA = 'https://example.com/api/users/1'
+      const urlB = 'https://example.org/alt/foo/2'
+
+      const DemoComponent = () => {
+        const cb = useFetchCb(urlA)
+        return (
+          <>
+            <button onClick={() => cb()}>Demo A</button>
+            <button onClick={() => cb(urlB)}>Demo B</button>
+          </>
+        )
+      }
+      const { getByText, findByText } = render(<DemoComponent />)
+      expect(fetch).toHaveBeenCalledTimes(0)
+
+      getByText('Demo B').click()
+      expect(fetch).toHaveBeenCalledTimes(1)
+      expect(fetch).nthCalledWith(1, urlB, undefined)
+
+      getByText('Demo A').click()
+      expect(fetch).toHaveBeenCalledTimes(2)
+      expect(fetch).nthCalledWith(2, urlA, undefined)
+    })
   })
 })

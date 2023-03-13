@@ -17,13 +17,13 @@ export interface CacheOptions {
   keep?: boolean
 }
 
-export const useFetchCb = <T> (url?: string, options?: RequestInit, cacheKeyOrOpts?: CacheOptions | string): FetchCallback<T> => {
+export const useFetchCb = <T> (hUrl?: string, hOptions?: RequestInit, hCacheKeyOrOpts?: CacheOptions | string): FetchCallback<T> => {
   const dispatch = useDispatch()
 
   return (cbUrl?: string, cbOptions?: RequestInit, cbCacheKeyOrOpts?: CacheOptions | string) => {
-    url = cbUrl || url
-    options = cbOptions || options
-    cacheKeyOrOpts = cbCacheKeyOrOpts || cacheKeyOrOpts
+    const url = cbUrl || hUrl
+    const options = cbOptions || hOptions
+    const cacheKeyOrOpts = cbCacheKeyOrOpts || hCacheKeyOrOpts
     const cacheOpts: CacheOptions = typeof cacheKeyOrOpts === 'string' ? { key: cacheKeyOrOpts } : cacheKeyOrOpts || {}
 
     const key = cacheOpts.key || url
