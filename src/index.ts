@@ -100,11 +100,11 @@ export const useFetch = <T> (url: string, options?: RequestInit, cacheKeyOrOpts?
   if (cleanupTimer) clearTimeout(cleanupTimer)
   const fetchPromise = doFetch()
     .then(v => {
-      cleanupTimer = setTimeout(() => dispatch({ type: FETCH_CLEANUP }), 1000)
+      cleanupTimer = setTimeout(() => dispatch({ type: FETCH_CLEANUP }), 30000)
       return v
     })
     .catch(e => {
-      cleanupTimer = setTimeout(() => dispatch({ type: FETCH_CLEANUP }), 1000)
+      cleanupTimer = setTimeout(() => dispatch({ type: FETCH_CLEANUP }), 30000)
       throw e
     })
 

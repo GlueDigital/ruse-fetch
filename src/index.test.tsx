@@ -5,8 +5,18 @@
 import React, { useState } from 'react'
 import { useFetch, useFetchCb, useFetchMeta } from './index'
 import { render, User, ErrorBoundary } from './test-util'
+/** We use FakeTimers because Jest's FakeTimers don't work properly with promises
+ * (all fetch requests stay in loading) even when we advance the time.
+ *
+ * We use FakeTimers because cleanup requires 30 seconds to complete; consequently,
+ * the tests would be too slow. */
+import FakeTimers from '@sinonjs/fake-timers'
+
+// Keep clock there to uninstall after each test
+let clock
 
 describe('useFetch', () => {
+  afterEach(() => clock?.uninstall())
   test('fetchs url, suspends, and finally returns value', async () => {
     const url = 'https://example.com/api/users/1'
 
@@ -135,6 +145,8 @@ describe('useFetch', () => {
     const url = 'https://example.com/api/users/1/slow'
     const Comp = () => <h1>{useFetch(url)}</h1>
 
+    clock = FakeTimers.install()
+
     const { findByText, store, unmount } = render(<Comp />)
 
     // Don't let the component resolve; unmount it while loading
@@ -142,7 +154,8 @@ describe('useFetch', () => {
     unmount()
 
     // Now wait until fetch resolved; data should be removed from the store
-    await new Promise(resolve => setTimeout(resolve, 1200))
+    await clock.tickAsync(32000)
+
     expect(JSON.stringify(store.getState())).not.toMatch('ok')
   })
 
@@ -163,8 +176,11 @@ describe('useFetch', () => {
       </>
     )
 
+    clock = FakeTimers.install()
+
     const { findByText, getByText, store } = render(<Comp />)
 
+    await clock.tickAsync(0)
     // Wait for CompA to be ready
     await findByText('Alice')
     let state = JSON.stringify(store.getState())
@@ -172,7 +188,7 @@ describe('useFetch', () => {
     expect(state).toMatch('Bob')
 
     // CompB crashed; wait for cleanup
-    await new Promise(resolve => setTimeout(resolve, 1200))
+    await clock.tickAsync(32000)
     state = JSON.stringify(store.getState())
     expect(getByText('crash')).not.toBeNull()
     expect(state).toMatch('Alice')
@@ -184,8 +200,12 @@ describe('useFetch', () => {
     const urlB = 'https://example.com/api/users/2/slower'
     const Comp = () => <h1>{useFetch(urlA)}{useFetch(urlB)}</h1>
 
+    clock = FakeTimers.install()
     const { findByText, store } = render(<Comp />)
-    await findByText('okok', {}, { timeout: 3500 })
+
+    // Advance clock 3.5 seconds to wait slower fetch
+    await clock.tickAsync(3500)
+    await findByText('okok')
     expect(fetch).toHaveBeenCalledTimes(2)
   })
 
