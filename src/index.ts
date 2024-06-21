@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 
 const FETCH_LOADING = 'useFetch/loading'
@@ -20,7 +20,7 @@ export interface CacheOptions {
 export const useFetchCb = <T> (hUrl?: string, hOptions?: RequestInit, hCacheKeyOrOpts?: CacheOptions | string): FetchCallback<T> => {
   const dispatch = useDispatch()
 
-  return (cbUrl?: string, cbOptions?: RequestInit, cbCacheKeyOrOpts?: CacheOptions | string) => {
+  return useCallback((cbUrl?: string, cbOptions?: RequestInit, cbCacheKeyOrOpts?: CacheOptions | string) => {
     const url = cbUrl || hUrl
     const options = cbOptions || hOptions
     const cacheKeyOrOpts = cbCacheKeyOrOpts || hCacheKeyOrOpts
@@ -59,7 +59,7 @@ export const useFetchCb = <T> (hUrl?: string, hOptions?: RequestInit, hCacheKeyO
 
     dispatch({ type: FETCH_LOADING, key, promise: fetchPromise })
     return fetchPromise
-  }
+  }, [dispatch, hUrl, hOptions, hCacheKeyOrOpts])
 }
 
 export const useFetch = <T> (url: string, options?: RequestInit, cacheKeyOrOpts?: CacheOptions | string): T => {
