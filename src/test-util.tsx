@@ -1,8 +1,10 @@
+// src/utils/render.tsx
 import React, { Suspense } from 'react'
 import { Provider } from 'react-redux'
-import { createStore, combineReducers } from 'redux'
-import { render as _render } from '@testing-library/react'
-import { fetchReducer } from './index'
+import { render as _render, RenderResult } from '@testing-library/react'
+import { configureStore } from '@reduxjs/toolkit'
+import rootReducer from './redux/reducers'
+
 require('jest-fetch-mock').enableMocks()
 
 declare var fetch: any // Contains extra mocks
@@ -30,13 +32,14 @@ export class ErrorBoundary extends React.Component {
   }
 }
 
-// Helper to render with mocked fetch, a store, and a suspense wrapper
-export const render = (comp) => {
-  const answer = (data, status?: number) => Promise.resolve({
+
+export const render = (comp: React.ReactElement): RenderResult & { store: typeof store, error: any } => {
+  const answer = (data: any, status?: number) => Promise.resolve({
     body: JSON.stringify(data),
     headers: { 'Content-Type': 'application/json' },
     status: status || 200
   })
+
   fetch.resetMocks()
   fetch.mockResponse(async req => {
     if (req.url.endsWith('/1')) return answer({ id: 1, name: 'Alice' })
@@ -51,8 +54,17 @@ export const render = (comp) => {
     }
     return { body: 'Not Found', status: 404 }
   })
+
+
+
+const store = configureStore({
+  reducer: rootReducer,
+  middleware: (getDefaultMiddleware) => getDefaultMiddleware({
+    serializableCheck: false
+  }),
+})
+
   const error = { current: null }
-  const store = createStore(combineReducers({ useFetch: fetchReducer }))
   const ret = _render(
     <Provider store={store}>
       <ErrorBoundary onError={e => error.current = e}>
@@ -62,6 +74,7 @@ export const render = (comp) => {
       </ErrorBoundary>
     </Provider>
   )
+
   return { ...ret, store, error }
 }
 

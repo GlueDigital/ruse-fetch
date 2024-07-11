@@ -1,12 +1,7 @@
 import { useCallback, useEffect } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-
-const FETCH_LOADING = 'useFetch/loading'
-const FETCH_SUCCESS = 'useFetch/success'
-const FETCH_ERROR = 'useFetch/error'
-const FETCH_USE = 'useFetch/use'
-const FETCH_UNUSE = 'useFetch/unuse'
-const FETCH_CLEANUP = 'useFetch/cleanup'
+import {  useSelector } from 'react-redux'
+import { useDispatch } from 'react-redux'
+import { fetchLoading, fetchSuccess, fetchError, fetchUse, fetchUnuse, fetchCleanup } from './redux/fetchReducer'
 
 let cleanupTimer = null
 
@@ -41,7 +36,7 @@ export const useFetchCb = <T> (hUrl?: string, hOptions?: RequestInit, hCacheKeyO
         return valuePromise
           .then(value => {
             if (res.ok) {
-              dispatch({ type: FETCH_SUCCESS, key, value, meta, keep: cacheOpts.keep })
+              dispatch(fetchSuccess({ key, value, meta, keep: cacheOpts.keep }))
               return value
             } else {
               const msg = 'Error ' + res.status
@@ -53,11 +48,10 @@ export const useFetchCb = <T> (hUrl?: string, hOptions?: RequestInit, hCacheKeyO
           })
       })
     .catch(error => {
-      dispatch({ type: FETCH_ERROR, key, error })
+      dispatch(fetchError({key, error}))
       throw error
     })
-
-    dispatch({ type: FETCH_LOADING, key, promise: fetchPromise })
+    dispatch(fetchLoading({key, promise: fetchPromise}))
     return fetchPromise
   }, [dispatch, hUrl, hOptions, hCacheKeyOrOpts])
 }
@@ -74,9 +68,9 @@ export const useFetch = <T> (url: string, options?: RequestInit, cacheKeyOrOpts?
   // Mark as used/unused on mount/unmount
   useEffect(() => {
     if (!url) return
-    dispatch({ type: FETCH_USE, key })
+    dispatch(fetchUse(key))
     return () => {
-      dispatch({ type: FETCH_UNUSE, key })
+      dispatch(fetchUnuse(key))
     }
   }, [key, url])
 
@@ -100,11 +94,11 @@ export const useFetch = <T> (url: string, options?: RequestInit, cacheKeyOrOpts?
   if (cleanupTimer) clearTimeout(cleanupTimer)
   const fetchPromise = doFetch()
     .then(v => {
-      cleanupTimer = setTimeout(() => dispatch({ type: FETCH_CLEANUP }), 30000)
+      cleanupTimer = setTimeout(() => dispatch(fetchCleanup()), 3000)
       return v
     })
     .catch(e => {
-      cleanupTimer = setTimeout(() => dispatch({ type: FETCH_CLEANUP }), 30000)
+      cleanupTimer = setTimeout(() => dispatch(fetchCleanup()), 3000)
       throw e
     })
 
@@ -126,46 +120,4 @@ export const useFetchMeta = (url: string, cacheKey?: string): FetchMeta => {
   const key = cacheKey || url
   const value = useSelector<any, any>(s => s.useFetch[key])
   return value && value.meta
-}
-
-export const fetchKeyReducer = (unsafeState, action) => {
-  const state = unsafeState || {}
-  switch (action.type) {
-    case FETCH_LOADING:
-      return { ...state, isLoading: true, promise: action.promise }
-    case FETCH_SUCCESS:
-      return { isSuccess: true, value: action.value, uses: state.uses, meta: action.meta, keep: action.keep }
-    case FETCH_ERROR:
-      return { isError: true, error: action.error, uses: state.uses }
-    case FETCH_USE:
-      return { ...state, uses: (state.uses || 0) + 1 }
-    case FETCH_UNUSE:
-      if (state.uses < 2 && !state.keep) return null
-      return { ...state, uses: state.uses - 1, stale: state.uses < 2 }
-  }
-}
-
-export const fetchReducer = (state = {}, action) => {
-  switch (action.type) {
-    case FETCH_LOADING:
-    case FETCH_SUCCESS:
-    case FETCH_ERROR:
-    case FETCH_USE:
-    case FETCH_UNUSE:
-      return {
-        ...state,
-        [action.key]: fetchKeyReducer(state[action.key], action)
-      }
-    case FETCH_CLEANUP:
-      const ret = {}
-      for (const key in state) {
-        const v = state[key]
-        if (v && ((!v.isSuccess && !v.isError) || v.uses || v.keep)) {
-          ret[key] = v
-        }
-      }
-      return ret
-    default:
-      return state
-  }
 }

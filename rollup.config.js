@@ -17,6 +17,7 @@ export default {
   ],
   external: [
     'react',
-    'react-redux'
+    'react-redux',
+    '@reduxjs/toolkit'
   ]
 }
