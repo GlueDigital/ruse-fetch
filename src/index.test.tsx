@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useFetch, useFetchCb, useFetchMeta } from './index'
 import { render, User, ErrorBoundary } from './test-util'
 /** We use FakeTimers because Jest's FakeTimers don't work properly with promises
@@ -42,10 +42,19 @@ describe('useFetch', () => {
     const urlA = 'https://example.com/api/users/1'
     const urlB = 'https://example.com/api/users/2'
 
-    const CompA = () => <h1>{useFetch<User>(urlA).name} {useFetch<User>(urlB).name}</h1>
+    const CompA = () => (
+      <h1>
+        {useFetch<User>(urlA).name} {useFetch<User>(urlB).name}
+      </h1>
+    )
     const CompB = () => <h1>{useFetch<User>(urlA).name}</h1>
 
-    const { findByText } = render(<><CompA /><CompB /></>)
+    const { findByText } = render(
+      <>
+        <CompA />
+        <CompB />
+      </>
+    )
     await findByText('Alice Bob')
 
     // There should be two fetch calls (with urls 1 and 2)
@@ -71,7 +80,13 @@ describe('useFetch', () => {
       return <h1>{data.name}</h1>
     }
 
-    const { findAllByText } = render(<><CompA /><CompB /><CompC /></>)
+    const { findAllByText } = render(
+      <>
+        <CompA />
+        <CompB />
+        <CompC />
+      </>
+    )
     await findAllByText('Alice')
 
     // There should be two fetch calls for the same url
@@ -165,7 +180,7 @@ describe('useFetch', () => {
     const CompA = () => <h1>{useFetch<User>(urlA).name}</h1>
     const CompB = () => {
       const user = useFetch<User>(urlB)
-      throw new Error("crash")
+      throw new Error('crash')
     }
     const Comp = () => (
       <>
@@ -198,7 +213,12 @@ describe('useFetch', () => {
   test('cache clean does not interfere with multiple slow fetchs from same component', async () => {
     const urlA = 'https://example.com/api/users/1/slower'
     const urlB = 'https://example.com/api/users/2/slower'
-    const Comp = () => <h1>{useFetch(urlA)}{useFetch(urlB)}</h1>
+    const Comp = () => (
+      <h1>
+        {useFetch(urlA)}
+        {useFetch(urlB)}
+      </h1>
+    )
 
     clock = FakeTimers.install()
     const { findByText, store } = render(<Comp />)
@@ -211,15 +231,18 @@ describe('useFetch', () => {
 
   test('if keep is enabled, it does not get removed on unmount but gets updated when used again', async () => {
     const url = 'https://example.com/api/users/1'
-    const Comp = () => <h1>{useFetch<User>(url, undefined, { keep: true }).name}</h1>
+    const Comp = () => (
+      <h1>{useFetch<User>(url, undefined, { keep: true }).name}</h1>
+    )
     const Toggler = () => {
       const [show, setShow] = useState(true)
-      return <>
-        <button onClick={() => setShow(x => !x)}>Toggle</button>
-        {show ? <Comp /> : 'Off'}
-      </>
+      return (
+        <>
+          <button onClick={() => setShow((x) => !x)}>Toggle</button>
+          {show ? <Comp /> : 'Off'}
+        </>
+      )
     }
-
 
     const { findByText, getByText, store } = render(<Toggler />)
     expect(fetch).toHaveBeenCalledTimes(1)
