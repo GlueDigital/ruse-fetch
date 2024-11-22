@@ -1,10 +1,9 @@
-const esbuild = require('esbuild')
+import esbuild from 'esbuild'
 
 const commonConfig = {
   entryPoints: ['./src/index.ts'],
   bundle: true,
   minify: false,
-  target: 'esnext',
   external: ['react', 'react-redux'],
   target: ['es2022'],
   sourcemap: true,
