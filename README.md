@@ -49,12 +49,13 @@ Instead of creating our own solution for these cases, we use the already availab
 Just use `<Suspense>` for the loading status, and error boundaries for errors:
 
 ```js
-const MyComponentWrapper = ({ id }) =>
+const MyComponentWrapper = ({ id }) => (
   <ErrorBoundary fallback="Not Found">
     <Suspense fallback="Loading...">
       <MyComponent id={id} />
     </Suspense>
   </ErrorBoundary>
+)
 ```
 
 ## Server-side rendering
@@ -75,7 +76,7 @@ You might need to make fetch calls for reasons other than data loading, such as 
 
 ```js
 const doFetch = useFetchCb(url) // Didn't fetch anything yet
-const handleClick = e => {
+const handleClick = (e) => {
   // ...
   doFetch() // Fetch is executed here
 }

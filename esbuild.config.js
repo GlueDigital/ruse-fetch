@@ -1,6 +1,5 @@
 const esbuild = require('esbuild')
 
-
 const commonConfig = {
   entryPoints: ['./src/index.ts'],
   bundle: true,
@@ -10,8 +9,8 @@ const commonConfig = {
   target: ['es2022'],
   sourcemap: true,
   loader: {
-    '.ts': 'ts',
-  },
+    '.ts': 'ts'
+  }
 }
 
 esbuild

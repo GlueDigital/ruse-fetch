@@ -12,11 +12,6 @@ export default {
       format: 'cjs'
     }
   ],
-  plugins: [
-    typescript()
-  ],
-  external: [
-    'react',
-    'react-redux'
-  ]
+  plugins: [typescript()],
+  external: ['react', 'react-redux']
 }
