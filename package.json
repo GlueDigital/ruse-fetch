@@ -40,6 +40,7 @@
     "@sinonjs/fake-timers": "^11.2.2",
     "@testing-library/react": "^11.2.7",
     "@types/jest": "^26.0.23",
+    "@types/sinonjs__fake-timers": "^8.1.5",
     "babel-jest": "^27.0.2",
     "esbuild": "^0.24.0",
     "eslint": "^9.13.0",

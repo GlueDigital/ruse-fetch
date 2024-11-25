@@ -1,23 +1,26 @@
 import { AnyAction, ThunkDispatch } from '@reduxjs/toolkit'
 import { createError, CustomError } from './error'
 import { fetchError, fetchLoading, fetchSuccess } from './slice'
-import { RootState } from '../types'
+import { FetchMeta, RootState } from '../types'
 
 type AppDispatch = ThunkDispatch<RootState, unknown, AnyAction>
 
 export const fetchData =
-  (url: string) => async (dispatch: AppDispatch, getState: () => RootState) => {
-    const existingRequest = getState().useFetch[url]
-    if (existingRequest?.loading) {
-      return existingRequest.promise
-    }
-
+  <T extends object>(
+    url: string,
+    key: string,
+    keep: boolean,
+    options?: RequestInit
+  ) =>
+  async (dispatch: AppDispatch) => {
     const promise = (async () => {
       try {
-        const response = await fetch(url)
+        const response = await fetch(url, options)
         const resType = response.headers.get('Content-Type')
         const isJson = resType && resType.startsWith('application/json')
-        const value = isJson ? await response.json() : await response.text()
+        const value = isJson
+          ? ((await response.json()) as T)
+          : ((await response.text()) as string)
 
         if (!response.ok) {
           const msg = `Error ${response.status}`
@@ -26,7 +29,13 @@ export const fetchData =
           throw error
         }
 
-        dispatch(fetchSuccess({ url, value }))
+        const meta: FetchMeta = {
+          status: response.status,
+          headers: Object.fromEntries(response.headers.entries()),
+          ts: Date.now()
+        }
+
+        dispatch(fetchSuccess({ url, value, meta, keep }))
         return value
       } catch (error) {
         dispatch(fetchError({ url, error: error as CustomError<unknown> }))
@@ -34,6 +43,6 @@ export const fetchData =
       }
     })()
 
-    dispatch(fetchLoading({ url, promise }))
+    dispatch(fetchLoading({ url, promise, key }))
     return promise
   }

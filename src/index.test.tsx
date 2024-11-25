@@ -10,10 +10,10 @@ import { render, User, ErrorBoundary } from './test-util'
  *
  * We use FakeTimers because cleanup requires 30 seconds to complete; consequently,
  * the tests would be too slow. */
-import FakeTimers from '@sinonjs/fake-timers'
+import FakeTimers, { InstalledClock } from '@sinonjs/fake-timers'
 
 // Keep clock there to uninstall after each test
-let clock
+let clock: InstalledClock
 
 describe('useFetch', () => {
   afterEach(() => clock?.uninstall())
