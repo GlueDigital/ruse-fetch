@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  */
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { useFetch, useFetchCb, useFetchMeta } from './index'
 import { render, User, ErrorBoundary } from './test-util'
 /** We use FakeTimers because Jest's FakeTimers don't work properly with promises
@@ -18,7 +18,7 @@ let clock: InstalledClock
 
 describe('useFetch', () => {
   afterEach(() => clock?.uninstall())
-  test.only('fetchs url, suspends, and finally returns value', async () => {
+  test('fetchs url, suspends, and finally returns value', async () => {
     const url = 'https://example.com/api/users/1'
 
     const DemoComponent = () => {
