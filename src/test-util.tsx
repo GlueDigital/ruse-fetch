@@ -1,4 +1,4 @@
-import { Component, ReactElement, ReactNode, Suspense } from 'react'
+import React, { Component, ReactElement, ReactNode, Suspense } from 'react'
 import { Provider } from 'react-redux'
 import { render as _render } from '@testing-library/react'
 import { fetchReducer } from './index'
@@ -73,7 +73,11 @@ export const render = (comp: ReactElement) => {
   const store = configureStore({
     reducer: {
       useFetch: fetchReducer
-    }
+    },
+    middleware: (getDefaultMiddleware) =>
+      getDefaultMiddleware({
+        serializableCheck: false
+      })
   })
   const ret = _render(
     <Provider store={store}>

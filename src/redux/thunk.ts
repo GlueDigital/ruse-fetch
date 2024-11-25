@@ -5,10 +5,10 @@ import { FetchMeta, RootState } from '../types'
 
 type AppDispatch = ThunkDispatch<RootState, unknown, AnyAction>
 
-const DEFAULT_OPTIONS: RequestInit = {
-  method: 'GET',
-  headers: { 'Content-Type': 'application/json' }
-}
+// const DEFAULT_OPTIONS: RequestInit = {
+//   method: 'GET',
+//   headers: { 'Content-Type': 'application/json' }
+// }
 
 export const fetchData =
   <T extends object | string>(
@@ -18,11 +18,11 @@ export const fetchData =
     options?: RequestInit
   ) =>
   async (dispatch: AppDispatch) => {
-    const fetchOptions = { ...DEFAULT_OPTIONS, ...options }
+    // const fetchOptions = { ...DEFAULT_OPTIONS, ...options }
 
     const promise = (async () => {
       try {
-        const response = await fetch(url, fetchOptions)
+        const response = await fetch(url, options)
         const resType = response.headers.get('Content-Type')
         const isJson = resType && resType.startsWith('application/json')
         const value = isJson
@@ -32,7 +32,7 @@ export const fetchData =
         if (!response.ok) {
           const msg = `Error ${response.status}`
           const error = createError(msg, { status: response.status }, value)
-          dispatch(fetchError({ url, error }))
+          dispatch(fetchError({ key, error }))
           throw error
         }
 
@@ -42,14 +42,14 @@ export const fetchData =
           ts: Date.now()
         }
 
-        dispatch(fetchSuccess({ url, value, meta, keep }))
+        dispatch(fetchSuccess({ key, value, meta, keep }))
         return value
       } catch (error) {
-        dispatch(fetchError({ url, error: error as CustomError<unknown> }))
+        dispatch(fetchError({ key, error: error as CustomError<unknown> }))
         throw error
       }
     })()
 
-    dispatch(fetchLoading({ url, promise, key }))
+    dispatch(fetchLoading({ promise, key }))
     return promise
   }

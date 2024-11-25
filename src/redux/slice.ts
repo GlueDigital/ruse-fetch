@@ -14,9 +14,9 @@ const fetchSlice = createSlice({
   initialState: initialCache,
   reducers: {
     fetchLoading(state, action: PayloadAction<FetchLoadingAction>) {
-      const { url, promise, key } = action.payload
-      state[url] = {
-        ...(state[url] || {}),
+      const { promise, key } = action.payload
+      state[key] = {
+        ...(state[key] || {}),
         status: 'loading',
         promise,
         keep: false,
@@ -28,40 +28,41 @@ const fetchSlice = createSlice({
       state: CacheType,
       action: PayloadAction<FetchSuccessAction<T>>
     ) {
-      const { url, value, keep } = action.payload
-      state[url] = {
-        ...(state[url] || {}),
+      const { value, keep, key, meta } = action.payload
+      state[key] = {
+        ...(state[key] || {}),
         status: 'success',
         promise: null,
         value,
+        meta,
         keep
       }
     },
     fetchError(state, action: PayloadAction<FetchErrorAction>) {
-      const { url, error } = action.payload
-      state[url] = {
-        ...(state[url] || {}),
+      const { key, error } = action.payload
+      state[key] = {
+        ...(state[key] || {}),
         promise: null,
         status: 'error',
         error
       }
     },
     fetchUse(state, action: PayloadAction<string>) {
-      const url = action.payload
-      state[url] = {
-        ...(state[url] || {}),
-        uses: (state[url]?.uses || 0) + 1
+      const key = action.payload
+      state[key] = {
+        ...(state[key] || {}),
+        uses: (state[key]?.uses || 0) + 1
       }
     },
     fetchUnuse(state, action: PayloadAction<string>) {
-      const url = action.payload
-      if (state[url].uses < 2 && !state[url].keep) {
-        delete state[url]
+      const key = action.payload
+      if (state[key].uses < 2 && !state[key].keep) {
+        delete state[key]
       } else {
-        state[url] = {
-          ...(state[url] || {}),
-          uses: state[url].uses - 1,
-          stale: state[url].uses < 2
+        state[key] = {
+          ...(state[key] || {}),
+          uses: state[key].uses - 1,
+          stale: state[key].uses < 2
         }
       }
     },

@@ -23,11 +23,11 @@ export function useFetch<T extends object | string>(
       ? { key: cacheOptions, keep: false }
       : cacheOptions || { key: url || '', keep: false }
 
-  const key = cacheOpts.key || url || ''
-
   const doFetch = useFetchCb<T>(url || '', options, cacheOpts)
 
-  const cacheEntry = useAppSelector((s) => s.useFetch[url || ''])
+  const key = cacheOpts.key || url || ''
+
+  const cacheEntry = useAppSelector((s) => s.useFetch[key || ''])
 
   useEffect(() => {
     if (!url) return
@@ -49,17 +49,17 @@ export function useFetch<T extends object | string>(
     }
   }
 
-  // if (cleanupTimer) clearTimeout(cleanupTimer)
+  if (cleanupTimer) clearTimeout(cleanupTimer)
 
   const fetchPromise = doFetch()
-  // .then((v) => {
-  //   cleanupTimer = setTimeout(() => dispatch(fetchCleanup()), TIMEOUT)
-  //   return v
-  // })
-  // .catch((e) => {
-  //   cleanupTimer = setTimeout(() => dispatch(fetchCleanup()), TIMEOUT)
-  //   throw e
-  // })
+    .then((v) => {
+      cleanupTimer = setTimeout(() => dispatch(fetchCleanup()), TIMEOUT)
+      return v
+    })
+    .catch((e) => {
+      cleanupTimer = setTimeout(() => dispatch(fetchCleanup()), TIMEOUT)
+      throw e
+    })
 
   // Porque arriba se comprueba stale y aqui no?
   if (cacheEntry?.status === 'success') return cacheEntry.value

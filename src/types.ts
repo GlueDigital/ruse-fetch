@@ -33,21 +33,20 @@ export interface CacheEntryWithMeta<T extends object> extends CacheEntry<T> {
 }
 
 export interface FetchLoadingAction {
-  url: string
   promise: Promise<unknown>
   key: string
 }
 
 export interface FetchSuccessAction<T extends object> {
-  url: string
+  key: string
   value: T | string
   meta: FetchMeta
   keep: boolean
 }
 
 export interface FetchErrorAction {
-  url: string
   error: Error
+  key: string
 }
 
 export type CacheType = Record<
