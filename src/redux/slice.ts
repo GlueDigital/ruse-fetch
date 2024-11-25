@@ -1,4 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
+
 import {
   CacheType,
   FetchErrorAction,
@@ -13,34 +14,80 @@ const fetchSlice = createSlice({
   initialState: initialCache,
   reducers: {
     fetchLoading(state, action: PayloadAction<FetchLoadingAction>) {
-      const url = action.payload.url
+      const { url, promise, key } = action.payload
       state[url] = {
-        ...state[url],
-        promise: action.payload.promise,
-        loading: true
+        ...(state[url] || {}),
+        status: 'loading',
+        promise,
+        keep: false,
+        key,
+        stale: false
       }
     },
-    fetchSuccess(state, action: PayloadAction<FetchSuccessAction>) {
-      const url = action.payload.url
+    fetchSuccess<T extends object>(
+      state: CacheType,
+      action: PayloadAction<FetchSuccessAction<T>>
+    ) {
+      const { url, value, keep } = action.payload
       state[url] = {
-        ...state[url],
-        loading: false,
-        isSuccess: true,
-        value: action.payload.value,
-        promise: undefined
+        ...(state[url] || {}),
+        status: 'success',
+        promise: null,
+        value,
+        keep
       }
     },
     fetchError(state, action: PayloadAction<FetchErrorAction>) {
-      const url = action.payload.url
+      const { url, error } = action.payload
       state[url] = {
-        ...state[url],
-        loading: false,
-        isError: true,
-        error: action.payload.error
+        ...(state[url] || {}),
+        promise: null,
+        status: 'error',
+        error
+      }
+    },
+    fetchUse(state, action: PayloadAction<string>) {
+      const url = action.payload
+      state[url] = {
+        ...(state[url] || {}),
+        uses: (state[url]?.uses || 0) + 1
+      }
+    },
+    fetchUnuse(state, action: PayloadAction<string>) {
+      const url = action.payload
+      if (state[url].uses < 2 && !state[url].keep) {
+        delete state[url]
+      } else {
+        state[url] = {
+          ...(state[url] || {}),
+          uses: state[url].uses - 1,
+          stale: state[url].uses < 2
+        }
+      }
+    },
+    fetchCleanup(state) {
+      const keys = Object.keys(state)
+      for (const key of keys) {
+        const entry = state[key]
+        if (
+          !entry ||
+          ((entry.status === 'success' || entry.status === 'error') &&
+            !entry.uses &&
+            !entry.keep)
+        ) {
+          delete state[key]
+        }
       }
     }
   }
 })
 
-export const { fetchError, fetchLoading, fetchSuccess } = fetchSlice.actions
+export const {
+  fetchError,
+  fetchLoading,
+  fetchSuccess,
+  fetchCleanup,
+  fetchUnuse,
+  fetchUse
+} = fetchSlice.actions
 export default fetchSlice.reducer

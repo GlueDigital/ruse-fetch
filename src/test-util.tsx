@@ -1,29 +1,41 @@
-import React, { Suspense } from 'react'
+import { Component, ReactElement, ReactNode, Suspense } from 'react'
 import { Provider } from 'react-redux'
-import { createStore, combineReducers } from 'redux'
 import { render as _render } from '@testing-library/react'
 import { fetchReducer } from './index'
-require('jest-fetch-mock').enableMocks()
+import jestFetchMock from 'jest-fetch-mock'
+import { configureStore } from '@reduxjs/toolkit'
+jestFetchMock.enableMocks()
 
-declare let fetch: any // Contains extra mocks
+interface FetchMock {
+  resetMocks: () => void
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+  mockResponse: Function
+}
+
+declare const fetch: FetchMock
 
 // Demo error boundary
-export class ErrorBoundary extends React.Component {
-  state: any
-  props: any
-
-  constructor(props) {
+export class ErrorBoundary extends Component<
+  { children: ReactNode; onError?: (error: Error) => void },
+  { error: Error | null }
+> {
+  constructor(props: {
+    children: ReactNode
+    onError?: (error: Error) => void
+  }) {
     super(props)
-    this.state = { error: false }
+    this.state = { error: null }
   }
 
-  static getDerivedStateFromError(e) {
-    return { error: e }
+  static getDerivedStateFromError(error: Error) {
+    return { error }
   }
 
   render() {
     if (this.state.error) {
-      this.props.onError && this.props.onError(this.state.error) // Might be called multiple times
+      if (this.props.onError) {
+        this.props.onError(this.state.error) // Might be called multiple times
+      }
       return this.state.error.message
     }
     return this.props.children
@@ -31,15 +43,16 @@ export class ErrorBoundary extends React.Component {
 }
 
 // Helper to render with mocked fetch, a store, and a suspense wrapper
-export const render = (comp) => {
-  const answer = (data, status?: number) =>
+
+export const render = (comp: ReactElement) => {
+  const answer = (data: unknown, status?: number) =>
     Promise.resolve({
       body: JSON.stringify(data),
       headers: { 'Content-Type': 'application/json' },
       status: status || 200
     })
   fetch.resetMocks()
-  fetch.mockResponse(async (req) => {
+  fetch.mockResponse(async (req: Request) => {
     if (req.url.endsWith('/1')) return answer({ id: 1, name: 'Alice' })
     if (req.url.endsWith('/2')) return answer({ id: 2, name: 'Bob' })
     if (req.url.endsWith('/private')) return answer({ role: 'user' }, 403)
@@ -56,8 +69,12 @@ export const render = (comp) => {
     }
     return { body: 'Not Found', status: 404 }
   })
-  const error = { current: null }
-  const store = createStore(combineReducers({ useFetch: fetchReducer }))
+  const error: { current: Error | null } = { current: null }
+  const store = configureStore({
+    reducer: {
+      useFetch: fetchReducer
+    }
+  })
   const ret = _render(
     <Provider store={store}>
       <ErrorBoundary onError={(e) => (error.current = e)}>

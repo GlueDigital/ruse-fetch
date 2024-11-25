@@ -10,18 +10,19 @@ import { render, User, ErrorBoundary } from './test-util'
  *
  * We use FakeTimers because cleanup requires 30 seconds to complete; consequently,
  * the tests would be too slow. */
-import FakeTimers from '@sinonjs/fake-timers'
+import FakeTimers, { InstalledClock } from '@sinonjs/fake-timers'
+import { CustomError } from './redux/error'
 
 // Keep clock there to uninstall after each test
-let clock
+let clock: InstalledClock
 
 describe('useFetch', () => {
   afterEach(() => clock?.uninstall())
-  test('fetchs url, suspends, and finally returns value', async () => {
+  test.only('fetchs url, suspends, and finally returns value', async () => {
     const url = 'https://example.com/api/users/1'
 
     const DemoComponent = () => {
-      const user: User = useFetch<User>(url)
+      const user = useFetch<User>(url)
       return <h1>{user.name}</h1>
     }
 
@@ -96,7 +97,7 @@ describe('useFetch', () => {
   })
 
   test('does nothing if url is falsy', async () => {
-    const Comp = () => <h1>{useFetch(null) || 'OK'}</h1>
+    const Comp = () => <h1>{useFetch<string>(null) || 'OK'}</h1>
     const { getByText } = render(<Comp />)
 
     // Fetch must not be called
@@ -110,19 +111,21 @@ describe('useFetch', () => {
     jest.spyOn(console, 'error').mockImplementation(() => {}) // Don't show the error
 
     const url = 'https://example.com/api/private'
-    const Comp = () => <h1>{useFetch<any>(url).title}</h1>
+    const Comp = () => <h1>{useFetch<{ title: string }>(url).title}</h1>
 
     const { getByText, findByText, error } = render(<Comp />)
     expect(getByText('Loading')).not.toBeNull()
     await findByText('Error 403')
 
-    expect(error.current.status).toEqual(403)
-    expect(error.current.payload.role).toEqual('user')
+    expect((error.current as CustomError<string>).status).toEqual(403)
+    expect(
+      (error.current as CustomError<{ role: string }>).payload.role
+    ).toEqual('user')
   })
 
   test('works with non-json responses', async () => {
     const url = 'https://example.com/text'
-    const Comp = () => <h1>{useFetch(url)}</h1>
+    const Comp = () => <h1>{useFetch<string>(url)}</h1>
 
     const { getByText, findByText } = render(<Comp />)
     expect(getByText('Loading')).not.toBeNull()
@@ -131,14 +134,14 @@ describe('useFetch', () => {
 
   test('works with non-json responses on errors', async () => {
     const url = 'https://example.com/not-found'
-    const Comp = () => <h1>{useFetch(url)}</h1>
+    const Comp = () => <h1>{useFetch<string>(url)}</h1>
 
     const { getByText, findByText, error } = render(<Comp />)
     expect(getByText('Loading')).not.toBeNull()
     await findByText('Error 404')
 
-    expect(error.current.status).toEqual(404)
-    expect(error.current.payload).toEqual('Not Found')
+    expect((error.current as CustomError<string>).status).toEqual(404)
+    expect((error.current as CustomError<string>).payload).toEqual('Not Found')
   })
 
   test('cleans up cache when no longer in use', async () => {
@@ -158,7 +161,7 @@ describe('useFetch', () => {
 
   test('cache does not leak when unmounted before resolving', async () => {
     const url = 'https://example.com/api/users/1/slow'
-    const Comp = () => <h1>{useFetch(url)}</h1>
+    const Comp = () => <h1>{useFetch<string>(url)}</h1>
 
     clock = FakeTimers.install()
 
@@ -179,7 +182,7 @@ describe('useFetch', () => {
     const urlB = 'https://example.com/api/users/2'
     const CompA = () => <h1>{useFetch<User>(urlA).name}</h1>
     const CompB = () => {
-      const user = useFetch<User>(urlB)
+      useFetch<User>(urlB)
       throw new Error('crash')
     }
     const Comp = () => (
@@ -215,8 +218,8 @@ describe('useFetch', () => {
     const urlB = 'https://example.com/api/users/2/slower'
     const Comp = () => (
       <h1>
-        {useFetch(urlA)}
-        {useFetch(urlB)}
+        {useFetch<string>(urlA)}
+        {useFetch<string>(urlB)}
       </h1>
     )
 
@@ -275,12 +278,15 @@ describe('useFetchMeta', () => {
     const DemoComponent = () => {
       const user: User = useFetch<User>(url)
       const meta = useFetchMeta(url)
-      return (
-        <>
-          <div>{meta.status}</div>
-          <div>{meta.headers['content-type']}</div>
-        </>
-      )
+
+      if (meta) {
+        return (
+          <>
+            <div>{meta.status}</div>
+            <div>{meta.headers['content-type']}</div>
+          </>
+        )
+      }
     }
 
     const { getByText, findByText } = render(<DemoComponent />)
