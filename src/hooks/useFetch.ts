@@ -61,7 +61,6 @@ export function useFetch<T extends object | string>(
       throw e
     })
 
-  // Porque arriba se comprueba stale y aqui no?
   if (cacheEntry?.status === 'success') return cacheEntry.value
 
   throw fetchPromise

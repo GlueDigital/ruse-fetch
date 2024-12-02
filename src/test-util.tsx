@@ -1,11 +1,39 @@
 import React, { Component, ReactElement, ReactNode, Suspense } from 'react'
 import { Provider } from 'react-redux'
-import { render as _render } from '@testing-library/react'
+import { render as _render, RenderResult } from '@testing-library/react'
 import { fetchReducer } from './index'
 import jestFetchMock from 'jest-fetch-mock'
-import { configureStore } from '@reduxjs/toolkit'
+import {
+  configureStore,
+  EnhancedStore,
+  StoreEnhancer,
+  ThunkDispatch,
+  Tuple,
+  UnknownAction
+} from '@reduxjs/toolkit'
+import { CacheType } from './types'
 jestFetchMock.enableMocks()
 
+type Store = EnhancedStore<
+  {
+    useFetch: CacheType
+  },
+  UnknownAction,
+  Tuple<
+    [
+      StoreEnhancer<{
+        dispatch: ThunkDispatch<
+          {
+            useFetch: CacheType
+          },
+          undefined,
+          UnknownAction
+        >
+      }>,
+      StoreEnhancer
+    ]
+  >
+>
 interface FetchMock {
   resetMocks: () => void
   // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
@@ -43,8 +71,9 @@ export class ErrorBoundary extends Component<
 }
 
 // Helper to render with mocked fetch, a store, and a suspense wrapper
-
-export const render = (comp: ReactElement) => {
+export const render = (
+  comp: ReactElement
+): RenderResult & { store: Store; error: { current: Error | null } } => {
   const answer = (data: unknown, status?: number) =>
     Promise.resolve({
       body: JSON.stringify(data),

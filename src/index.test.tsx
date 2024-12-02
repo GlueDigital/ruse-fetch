@@ -1,23 +1,10 @@
-/**
- * @jest-environment jsdom
- */
-
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useFetch, useFetchCb, useFetchMeta } from './index'
 import { render, User, ErrorBoundary } from './test-util'
-/** We use FakeTimers because Jest's FakeTimers don't work properly with promises
- * (all fetch requests stay in loading) even when we advance the time.
- *
- * We use FakeTimers because cleanup requires 30 seconds to complete; consequently,
- * the tests would be too slow. */
-import FakeTimers, { InstalledClock } from '@sinonjs/fake-timers'
 import { CustomError } from './redux/error'
-
-// Keep clock there to uninstall after each test
-let clock: InstalledClock
+import { act } from '@testing-library/react'
 
 describe('useFetch', () => {
-  afterEach(() => clock?.uninstall())
   test('fetchs url, suspends, and finally returns value', async () => {
     const url = 'https://example.com/api/users/1'
 
@@ -30,7 +17,7 @@ describe('useFetch', () => {
 
     // The fetch call must have been performed right away
     expect(fetch).toHaveBeenCalledTimes(1)
-    expect(fetch).toBeCalledWith(url, undefined)
+    expect(fetch).toHaveBeenCalledWith(url, undefined)
 
     // The initial render should show the loading state
     expect(getByText('Loading')).not.toBeNull()
@@ -60,8 +47,8 @@ describe('useFetch', () => {
 
     // There should be two fetch calls (with urls 1 and 2)
     expect(fetch).toHaveBeenCalledTimes(2)
-    expect(fetch).nthCalledWith(1, urlA, undefined)
-    expect(fetch).nthCalledWith(2, urlB, undefined)
+    expect(fetch).toHaveBeenNthCalledWith(1, urlA, undefined)
+    expect(fetch).toHaveBeenNthCalledWith(2, urlB, undefined)
   })
 
   test('cache key is used when provided', async () => {
@@ -92,8 +79,8 @@ describe('useFetch', () => {
 
     // There should be two fetch calls for the same url
     expect(fetch).toHaveBeenCalledTimes(2)
-    expect(fetch).nthCalledWith(1, url, undefined)
-    expect(fetch).nthCalledWith(2, url, opts)
+    expect(fetch).toHaveBeenNthCalledWith(1, url, undefined)
+    expect(fetch).toHaveBeenNthCalledWith(2, url, opts)
   })
 
   test('does nothing if url is falsy', async () => {
@@ -163,8 +150,6 @@ describe('useFetch', () => {
     const url = 'https://example.com/api/users/1/slow'
     const Comp = () => <h1>{useFetch<string>(url)}</h1>
 
-    clock = FakeTimers.install()
-
     const { findByText, store, unmount } = render(<Comp />)
 
     // Don't let the component resolve; unmount it while loading
@@ -172,7 +157,7 @@ describe('useFetch', () => {
     unmount()
 
     // Now wait until fetch resolved; data should be removed from the store
-    await clock.tickAsync(32000)
+    await jest.advanceTimersByTimeAsync(32000)
 
     expect(JSON.stringify(store.getState())).not.toMatch('ok')
   })
@@ -194,11 +179,9 @@ describe('useFetch', () => {
       </>
     )
 
-    clock = FakeTimers.install()
-
     const { findByText, getByText, store } = render(<Comp />)
 
-    await clock.tickAsync(0)
+    await jest.advanceTimersByTimeAsync(0)
     // Wait for CompA to be ready
     await findByText('Alice')
     let state = JSON.stringify(store.getState())
@@ -206,7 +189,7 @@ describe('useFetch', () => {
     expect(state).toMatch('Bob')
 
     // CompB crashed; wait for cleanup
-    await clock.tickAsync(32000)
+    await jest.advanceTimersByTimeAsync(32000)
     state = JSON.stringify(store.getState())
     expect(getByText('crash')).not.toBeNull()
     expect(state).toMatch('Alice')
@@ -223,11 +206,11 @@ describe('useFetch', () => {
       </h1>
     )
 
-    clock = FakeTimers.install()
-    const { findByText, store } = render(<Comp />)
+    const { findByText } = render(<Comp />)
 
     // Advance clock 3.5 seconds to wait slower fetch
-    await clock.tickAsync(3500)
+    // await clock.tickAsync(3500)
+    await jest.advanceTimersByTimeAsync(3200)
     await findByText('okok')
     expect(fetch).toHaveBeenCalledTimes(2)
   })
@@ -255,13 +238,17 @@ describe('useFetch', () => {
     expect(JSON.stringify(store.getState())).toMatch('Alice')
 
     // Unmount the component and check store contents
-    getByText('Toggle').click()
+    await act(async () => {
+      getByText('Toggle').click()
+    })
     await findByText('Off')
     expect(JSON.stringify(store.getState())).toMatch('Alice')
     expect(JSON.stringify(store.getState())).toMatch('stale')
 
     // Render it again
-    getByText('Toggle').click()
+    await act(async () => {
+      getByText('Toggle').click()
+    })
 
     // The initial render should show the previous value
     expect(getByText('Alice')).not.toBeNull()
@@ -293,7 +280,7 @@ describe('useFetchMeta', () => {
 
     // The fetch call must have been performed right away
     expect(fetch).toHaveBeenCalledTimes(1)
-    expect(fetch).toBeCalledWith(url, undefined)
+    expect(fetch).toHaveBeenCalledWith(url, undefined)
 
     // The initial render should show the loading state
     expect(getByText('Loading')).not.toBeNull()
@@ -317,16 +304,16 @@ describe('useFetchMeta', () => {
           </>
         )
       }
-      const { getByText, findByText } = render(<DemoComponent />)
+      const { getByText } = render(<DemoComponent />)
       expect(fetch).toHaveBeenCalledTimes(0)
 
       getByText('Demo B').click()
       expect(fetch).toHaveBeenCalledTimes(1)
-      expect(fetch).nthCalledWith(1, urlB, undefined)
+      expect(fetch).toHaveBeenNthCalledWith(1, urlB, undefined)
 
       getByText('Demo A').click()
       expect(fetch).toHaveBeenCalledTimes(2)
-      expect(fetch).nthCalledWith(2, urlA, undefined)
+      expect(fetch).toHaveBeenNthCalledWith(2, urlA, undefined)
     })
   })
 })
