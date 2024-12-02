@@ -1,4 +1,4 @@
-import React, { Component, ReactElement, ReactNode, Suspense } from 'react'
+import { Component, ReactElement, ReactNode, Suspense } from 'react'
 import { Provider } from 'react-redux'
 import { render as _render, RenderResult } from '@testing-library/react'
 import { fetchReducer } from './index'
