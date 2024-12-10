@@ -1,9 +1,10 @@
 import { useDispatch } from 'react-redux'
-import { CacheOptions } from '../types'
 import { useFetchCb } from './useFetchCb'
 import { useAppSelector } from '../redux/selector'
 import { fetchCleanup, fetchUnuse, fetchUse } from '../redux/slice'
 import { useEffect } from 'react'
+
+import type { CacheOptions } from '../types'
 
 let cleanupTimer: ReturnType<typeof setTimeout>
 

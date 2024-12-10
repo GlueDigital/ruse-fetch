@@ -1,14 +1,10 @@
 import { AnyAction, ThunkDispatch } from '@reduxjs/toolkit'
 import { createError, CustomError } from './error'
 import { fetchError, fetchLoading, fetchSuccess } from './slice'
-import { FetchMeta, RootState } from '../types'
+
+import type { FetchMeta, RootState } from '../types'
 
 type AppDispatch = ThunkDispatch<RootState, unknown, AnyAction>
-
-// const DEFAULT_OPTIONS: RequestInit = {
-//   method: 'GET',
-//   headers: { 'Content-Type': 'application/json' }
-// }
 
 export const fetchData =
   <T extends object | string>(
@@ -18,8 +14,6 @@ export const fetchData =
     options?: RequestInit
   ) =>
   async (dispatch: AppDispatch) => {
-    // const fetchOptions = { ...DEFAULT_OPTIONS, ...options }
-
     const promise = (async () => {
       try {
         const response = await fetch(url, options)

@@ -1,7 +1,8 @@
 import { useDispatch } from 'react-redux'
-import { CacheOptions } from '../types'
 import { useCallback } from 'react'
 import { fetchData } from '../redux/thunk'
+
+import type { CacheOptions } from '../types'
 
 export function useFetchCb<T extends object | string>(
   topUrl: string,
