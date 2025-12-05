@@ -17,7 +17,7 @@ const fetchSlice = createSlice({
       const { promise, key } = action.payload
       state[key] = {
         ...(state[key] || {}),
-        status: 'loading',
+        status: state[key]?.status === 'success' ? 'success' : 'loading',
         promise,
         keep: false,
         key,

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { useFetch, useFetchCb, useFetchMeta } from './index'
 import { render, User, ErrorBoundary } from './test-util'
 import { CustomError } from './redux/error'
@@ -217,16 +217,21 @@ describe('useFetch', () => {
 
   test('if keep is enabled, it does not get removed on unmount but gets updated when used again', async () => {
     const url = 'https://example.com/api/users/1'
+    const suspended = jest.fn()
     const Comp = () => (
       <h1>{useFetch<User>(url, undefined, { keep: true }).name}</h1>
     )
+    const Fallback = () => {
+      suspended()
+      return 'Loading'
+    }
     const Toggler = () => {
       const [show, setShow] = useState(true)
       return (
-        <>
+        <Suspense fallback={<Fallback />}>
           <button onClick={() => setShow((x) => !x)}>Toggle</button>
           {show ? <Comp /> : 'Off'}
-        </>
+        </Suspense>
       )
     }
 
@@ -236,6 +241,7 @@ describe('useFetch', () => {
     // Wait for the final render
     await findByText('Alice')
     expect(JSON.stringify(store.getState())).toMatch('Alice')
+    expect(suspended).toHaveBeenCalledTimes(1)
 
     // Unmount the component and check store contents
     await act(async () => {
@@ -250,11 +256,17 @@ describe('useFetch', () => {
       getByText('Toggle').click()
     })
 
-    // The initial render should show the previous value
+    // A new fetch call must have been performed
+    expect(fetch).toHaveBeenCalledTimes(2)
+
+    // Make sure it completed already
+    expect(JSON.stringify(store.getState())).toMatch('"promise":null')
+
+    // It should show the right value
     expect(getByText('Alice')).not.toBeNull()
 
-    // A new fetch call must have been performed right away
-    expect(fetch).toHaveBeenCalledTimes(2)
+    // It should not have suspended a second time
+    expect(suspended).toHaveBeenCalledTimes(1)
   })
 })
 
